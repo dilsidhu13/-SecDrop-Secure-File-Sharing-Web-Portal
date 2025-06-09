@@ -1,4 +1,4 @@
-# -SecDrop-Secure-File-Sharing-Web-Portal
+# SecDrop-Secure-File-Sharing-Web-Portal
 # Problem Definition
 SecDrop is a secure, web-based file sharing platform designed specifically for
 individuals or teams needing simple, encrypted file exchange. The system supports two
