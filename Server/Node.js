@@ -1,4 +1,4 @@
 cd ../server
 npm init -y
 npm install express cors
-touch index.
+touch index.js
