@@ -1,25 +1,28 @@
-import React from 'react'
-
+// src/App.js
+import React from 'react';
 import FileEncryptUpload from './FileEncryptUpload.js';
+import logo from './logo.webp';   // logo Photo
 import './App.css';
 
-import { deriveKey, encryptBlob, decryptBlob } from './encryption.js'
-console.log('deriveKey is a', typeof deriveKey)  // should print "function"
 function App() {
   return (
     <div className="App">
       <header className="App-header">
-        <h1>SecDrop</h1>
-        <p>Secure, account-free file transfers</p>
+        {/* Logo on the left */}
+        <img src={logo} className="App-logo" alt="SecDrop logo" />
+
+        {/* Text to the right of logo */}
+        <div className="App-header-text">
+          <h1>SecDrop</h1>
+          <p>Secure, account-free file transfers</p>
+        </div>
       </header>
-      {/* This is your file upload/encryption interface */}
+
       <main>
         <FileEncryptUpload />
       </main>
     </div>
   );
 }
-
-// src/App.js
 
 export default App;

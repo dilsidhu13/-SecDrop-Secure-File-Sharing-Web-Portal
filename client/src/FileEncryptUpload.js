@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+// client/src/components/FileEncryptUpload.js
+import React, { useState, useCallback } from 'react';
 import { deriveKey, encryptBlob } from './encryption.js';
 import base58 from 'bs58';
 
@@ -8,14 +9,35 @@ export default function FileEncryptUpload() {
   const [status, setStatus] = useState('');
 
   // Generate a random Base58 Key A
-  function genKeyA() {
+  const genKeyA = useCallback(() => {
     const randomBytes = crypto.getRandomValues(new Uint8Array(16));
     return base58.encode(randomBytes);
-  }
+  }, []);
+
+  // Handle file selection via input or drag-and-drop
+  const handleFileSelect = useCallback((selectedFile) => {
+    setFile(selectedFile);
+    setStatus(`Selected file: ${selectedFile.name}`);
+  }, []);
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const droppedFiles = e.dataTransfer.files;
+    if (droppedFiles && droppedFiles.length > 0) {
+      handleFileSelect(droppedFiles[0]);
+      e.dataTransfer.clearData();
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
 
   async function handleUpload() {
     if (!file || !keyB) {
-      setStatus('Select a file and enter Key B first.');
+      setStatus('Please select a file and enter Key B.');
       return;
     }
 
@@ -28,13 +50,12 @@ export default function FileEncryptUpload() {
       const { ciphertext, iv } = await encryptBlob(file, cryptoKey);
 
       setStatus('Uploading…');
-      // Build a FormData payload
       const form = new FormData();
       form.append('file', new Blob([ciphertext], { type: file.type }));
       form.append('iv', JSON.stringify(Array.from(iv)));
       form.append('keyA', keyA);
 
-      const res = await fetch('server/api/upload', {
+      const res = await fetch('/api/upload', {
         method: 'POST',
         body: form,
       });
@@ -42,7 +63,7 @@ export default function FileEncryptUpload() {
       if (!res.ok) throw new Error(await res.text());
       const { downloadCode } = await res.json();
 
-      setStatus(`Success! Share this code + your Key B to download: ${downloadCode}`);
+      setStatus(`Success! Share this code + your Key B: ${downloadCode}`);
     } catch (err) {
       console.error(err);
       setStatus('Error: ' + err.message);
@@ -50,13 +71,25 @@ export default function FileEncryptUpload() {
   }
 
   return (
-    <div>
-      <h2>SecDrop: Encrypt & Upload</h2>
+    <div className="file-upload-container">
+      <h2>SecDrop: Drag & Drop Encrypt & Upload</h2>
 
-      <input
-        type="file"
-        onChange={e => setFile(e.target.files[0] || null)}
-      />
+      <div
+        className="dropzone"
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+      >
+        {file ? (
+          <p>{file.name}</p>
+        ) : (
+          <p>Drag & drop a file here, or click to select.</p>
+        )}
+        <input
+          type="file"
+          className="file-input"
+          onChange={e => e.target.files[0] && handleFileSelect(e.target.files[0])}
+        />
+      </div>
 
       <input
         type="password"
@@ -67,7 +100,7 @@ export default function FileEncryptUpload() {
 
       <button onClick={handleUpload}>Encrypt & Upload</button>
 
-      <p>{status}</p>
+      <p className="status-message">{status}</p>
     </div>
   );
 }
