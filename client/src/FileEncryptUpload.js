@@ -34,7 +34,7 @@ export default function FileEncryptUpload() {
       form.append('iv', JSON.stringify(Array.from(iv)));
       form.append('keyA', keyA);
 
-      const res = await fetch('/api/upload', {
+      const res = await fetch('server/api/upload', {
         method: 'POST',
         body: form,
       });
