@@ -2,7 +2,7 @@ import React from 'react'
 import logo from './logo.svg';
 import './App.css';
 
-import { deriveKey, encryptBlob, decryptBlob } from './utils/encryption'
+import { deriveKey, encryptBlob, decryptBlob } from '.encryption.js'
 console.log('deriveKey is a', typeof deriveKey)  // should print "function"
 function App() {
   return (
