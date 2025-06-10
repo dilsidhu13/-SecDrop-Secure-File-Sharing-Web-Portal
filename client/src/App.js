@@ -22,4 +22,12 @@ function App() {
   );
 }
 
+import React from 'react'
+import { deriveKey, encryptBlob, decryptBlob } from './utils/encryption'
+
+function App() {
+  // …
+}
+export default App
+
 export default App;
