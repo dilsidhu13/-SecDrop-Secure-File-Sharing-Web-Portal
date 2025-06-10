@@ -1,5 +1,6 @@
 import React from 'react'
 import logo from './logo.svg';
+import FileEncryptUpload from './FileEncryptUpload.js';
 import './App.css';
 
 import { deriveKey, encryptBlob, decryptBlob } from './encryption.js'
@@ -8,22 +9,18 @@ function App() {
   return (
     <div className="App">
       <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
+        <h1>SecDrop</h1>
+        <p>Secure, account-free file transfers</p>
       </header>
+
+      {/* This is your file upload/encryption interface */}
+      <main>
+        <FileEncryptUpload />
+      </main>
     </div>
   );
 }
 
+// src/App.js
 
 export default App;

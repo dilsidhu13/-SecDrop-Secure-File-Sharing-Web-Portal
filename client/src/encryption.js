@@ -1,4 +1,4 @@
-// shared/encryption.js
+// /encryption.js
 // Utility functions for SecDrop client-side encryption using WebCrypto API
 
 /**
