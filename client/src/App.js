@@ -1,6 +1,9 @@
+import React from 'react'
 import logo from './logo.svg';
 import './App.css';
 
+import { deriveKey, encryptBlob, decryptBlob } from './utils/encryption'
+console.log('deriveKey is a', typeof deriveKey)  // should print "function"
 function App() {
   return (
     <div className="App">
@@ -22,12 +25,9 @@ function App() {
   );
 }
 
-import React from 'react'
-import { deriveKey, encryptBlob, decryptBlob } from './utils/encryption'
 
-function App() {
-  // …
-}
+
+
 export default App
 
 export default App;
