@@ -19,5 +19,14 @@
   border-radius: 50%;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
   background-color: #282c34;
+  animation: roll-tire 4s linear infinite;
 }
 
+@keyframes roll-tire {
+  0% {
+    transform: translateX(0) rotate(0deg);
+  }
+  100% {
+    transform: translateX(1000px) rotate(360deg);
+  }
+}
