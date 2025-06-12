@@ -2,12 +2,23 @@
   text-align: center;
 }
 
+.App-header-text {
+  background-color: #282c34;
+  min-height: 80px; /* Set a fixed height for the bar */
+  display: flex; /* Use flex for consistent layout */
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  font-size: calc(10px + 2vmin);
+  color: white;
+  padding: 0 20px; /* Optional: add some horizontal padding */
+  position: relative; /* Ensure children are positioned relative to header */
+}
+
 .App-logo {
-  height: 175px;
-  width: 175px;
-  margin: 10px;
-  position: absolute;
-  left: 0;
+  height: 60px; /* Adjust as needed to fit the bar */
+  width: 60px;
+  margin-right: 20px; /* Space between logo and text */
   border: none;
   outline: none;
   background-color: #282c34;
@@ -18,19 +29,6 @@
   transition: transform 0.2s ease-in-out;
   transform: scale(1);
   transform-origin: center;
-}
-
-
-
-.App-header-text {
-  background-color: #282c34;
-  min-height: 30vh;
-  display: flow-root list-item;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
 }
 
 
