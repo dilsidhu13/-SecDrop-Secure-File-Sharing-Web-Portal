@@ -3,11 +3,11 @@
 }
 
 .App-logo {
-  height: 100px;
+  position: absolute;    /* 2) absolute now positioned relative to .App-header-text */
+  top: 10px;             /* instead of margin-top */
+  left: 10px;            /* instead of margin-left */
   width: 100px;
-  margin: 10px;
-  position: absolute;
-  left: 0;
+  height: 100px;
   border: none;
   outline: none;
   background-color: #282c34;
@@ -16,7 +16,6 @@
   pointer-events: none;
   animation: App-logo-spin infinite 20s linear;
   transition: transform 0.2s ease-in-out;
-  transform: scale(1);
   transform-origin: center;
 }
 
@@ -30,6 +29,8 @@
 }
 
 .App-header-text {
+  position: relative;    /* 1) contain absolute children */
+  overflow: hidden;      /* optional: clip anything that spills out */
   background-color: #282c34;
   min-height: 30vh;
   display: flex;
@@ -39,5 +40,4 @@
   font-size: calc(10px + 2vmin);
   color: white;
 }
-
 
