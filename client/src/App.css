@@ -4,7 +4,7 @@
 
 .App-header-text {
  
-  background-color: rgba(40, 44, 52, 0.3); /* 0.3 = 30% opaque */
+  background-color: #282c34;
   min-height: 100px;
   display: flow-root;
   font-size: inherit;
