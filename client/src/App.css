@@ -4,33 +4,29 @@
 
 .App-header-text {
   background-color: #282c34;
-  min-height: 80px; /* Set a fixed height for the bar */
-  display: flex; /* Use flex for consistent layout */
+  min-height: 80px;
+  display: flex;
   flex-direction: row;
   align-items: center;
   justify-content: flex-start;
   font-size: calc(10px + 2vmin);
   color: white;
-  padding: 0 20px; /* Optional: add some horizontal padding */
-  position: relative; /* Ensure children are positioned relative to header */
+  padding: 0 20px;
 }
 
 .App-logo {
-  height: 60px; /* Adjust as needed to fit the bar */
+  height: 60px;
   width: 60px;
-  margin-right: 20px; /* Space between logo and text */
-  border: none;
-  outline: none;
-  background-color: #282c34;
+  margin-right: 20px;
   border-radius: 50%;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  background-color: #282c34;
   pointer-events: none;
   animation: App-logo-spin infinite 20s linear;
   transition: transform 0.2s ease-in-out;
   transform: scale(1);
   transform-origin: center;
 }
-
 
 @keyframes App-logo-spin {
   from {
