@@ -3,21 +3,19 @@
 }
 
 .App-header-text {
+ 
   background-color: #282c34;
-  min-height: 80px;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: flex-start;
-  font-size: calc(10px + 2vmin);
+  min-height: 100px;
+  display: flow-root;
+  font-size: inherit;
   color: white;
-  padding: 0 20px;
+  padding: 5px 20px;
 }
 
 .App-logo {
-  height: 60px;
-  width: 60px;
-  margin-right: 20px;
+ height: 150px;
+  width: 150px;
+  margin-right: 1650px;
   border-radius: 50%;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
   background-color: #282c34;
