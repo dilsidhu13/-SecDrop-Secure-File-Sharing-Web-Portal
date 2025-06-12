@@ -1,26 +1,25 @@
+.App {
+  text-align: center;
+}
+
 .App-header-text {
-  background-color: rgba(40, 44, 52, 0.3); /* transparent background */
+ 
+  background-color: #282c34;
   min-height: 100px;
-  display: flex; /* use flexbox for horizontal alignment */
-  align-items: center; /* vertically center items */
+  display: flow-root;
   font-size: inherit;
   color: white;
   padding: 5px 20px;
-  position: relative;
-  width: 100%;
-  top: 0;
-  left: 0;
 }
 
 .App-logo {
-  height: 80px;
-  width: 80px;
-  margin: 0 20px 0 0; /* space between logo and text */
+ height: 150px;
+  width: 150px;
+  margin-right: 1650px;
   border-radius: 50%;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
   background-color: #282c34;
-  animation: roll-tire 5s linear infinite;
-  position: relative;
+  animation: roll-tire 10s linear infinite;
 }
 
 @keyframes roll-tire {
@@ -28,6 +27,6 @@
     transform: translateX(0) rotate(0deg);
   }
   100% {
-    transform: translateX(200px) rotate(360deg); /* adjust as needed */
+    transform: translateX(1600px) rotate(360deg);
   }
 }
