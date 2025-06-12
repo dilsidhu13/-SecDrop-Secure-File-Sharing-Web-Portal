@@ -1,12 +1,14 @@
 // client/src/components/FileEncryptUpload.js
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { deriveKey, encryptBlob } from './encryption.js';
 import base58 from 'bs58';
+import './FileEncryptUpload.css';
 
 export default function FileEncryptUpload() {
   const [file, setFile] = useState(null);
   const [keyB, setKeyB] = useState('');
   const [status, setStatus] = useState('');
+  const fileInputRef = useRef(null);
 
   // Generate a random Base58 Key A
   const genKeyA = useCallback(() => {
@@ -14,12 +16,13 @@ export default function FileEncryptUpload() {
     return base58.encode(randomBytes);
   }, []);
 
-  // Handle file selection via input or drag-and-drop
+  // Handle file selection
   const handleFileSelect = useCallback((selectedFile) => {
     setFile(selectedFile);
     setStatus(`Selected file: ${selectedFile.name}`);
   }, []);
 
+  // Drag-and-drop handlers
   const handleDrop = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -33,6 +36,11 @@ export default function FileEncryptUpload() {
   const handleDragOver = (e) => {
     e.preventDefault();
     e.stopPropagation();
+  };
+
+  // Fallback for choosing file button
+  const handleChooseClick = () => {
+    fileInputRef.current && fileInputRef.current.click();
   };
 
   async function handleUpload() {
@@ -72,7 +80,7 @@ export default function FileEncryptUpload() {
 
   return (
     <div className="file-upload-container">
-      <h2>SecDrop: Drag & Drop Encrypt & Upload</h2>
+      <h2>SecDrop: Drag & Drop or Choose File</h2>
 
       <div
         className="dropzone"
@@ -82,14 +90,20 @@ export default function FileEncryptUpload() {
         {file ? (
           <p>{file.name}</p>
         ) : (
-          <p>Drag & drop a file here, or click to select.</p>
+          <p>Drag & drop a file here</p>
         )}
+        {/* Hidden file input for both drag-and-drop and choose button */}
         <input
           type="file"
+          ref={fileInputRef}
           className="file-input"
           onChange={e => e.target.files[0] && handleFileSelect(e.target.files[0])}
         />
       </div>
+<break> </break>
+      <button type="button" onClick={handleChooseClick} className="choose-button">
+        Choose File
+      </button>
 
       <input
         type="password"
