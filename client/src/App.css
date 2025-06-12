@@ -3,30 +3,38 @@
 }
 
 .App-header-text {
- 
+  position: relative;
   background-color: #282c34;
   min-height: 100px;
-  display: flow-root;
+  display: flex;
+  align-items: center;
   font-size: inherit;
   color: white;
   padding: 5px 20px;
+  overflow: hidden; /* Ensures logo doesn't overflow the bar */
 }
 
 .App-logo {
- height: 150px;
-  width: 150px;
-  margin-right: 1650px;
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 80px;
+  width: 80px;
   border-radius: 50%;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
   background-color: #282c34;
-  animation: roll-tire 10s linear infinite;
+  animation: roll-tire 5s linear infinite;
+  z-index: 2;
 }
 
 @keyframes roll-tire {
   0% {
-    transform: translateX(0) rotate(0deg);
+    left: 0;
+    transform: translateY(-50%) rotate(0deg);
   }
   100% {
-    transform: translateX(1600px) rotate(360deg);
+    left: calc(100% - 80px);
+    transform: translateY(-50%) rotate(360deg);
   }
 }
