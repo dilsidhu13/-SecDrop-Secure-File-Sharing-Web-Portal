@@ -30,8 +30,8 @@
   position: absolute;
   top: 0;
   left: 0;
-  width: 900%;
-  height: 900%;
+  width: 500%;
+  height: 500%;
   opacity: 0;
   cursor: pointer;
 }
