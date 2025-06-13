@@ -82,7 +82,6 @@ export default function FileEncryptUpload() {
     <div className="file-upload-container">
       <h2>SecDrop: Drag & Drop or Choose File</h2>
 
-      {/* File dropzone */}
       <div
         className="dropzone"
         onDrop={handleDrop}
@@ -93,6 +92,7 @@ export default function FileEncryptUpload() {
         ) : (
           <p>Drag & drop a file here</p>
         )}
+        {/* Hidden file input for both drag-and-drop and choose button */}
         <input
           type="file"
           ref={fileInputRef}
@@ -100,28 +100,20 @@ export default function FileEncryptUpload() {
           onChange={e => e.target.files[0] && handleFileSelect(e.target.files[0])}
         />
       </div>
+      
+<break> </break>
+      <button type="button" onClick={handleChooseClick} className="choose-button">
+        Choose File
+      </button>
 
-      {/* Choose file button */}
-      <div className="choose-file-button-container">
-        <button type="button" onClick={handleChooseClick} className="choose-button">
-          Choose File
-        </button>
-      </div>
+      <input
+        type="password"
+        placeholder="Enter your Key B"
+        value={keyB}
+        onChange={e => setKeyB(e.target.value)}
+      />
 
-      {/* Password input */}
-      <div className="password-input-container">
-        <input
-          type="password"
-          placeholder="Enter your Key B"
-          value={keyB}
-          onChange={e => setKeyB(e.target.value)}
-        />
-      </div>
-
-      {/* Encrypt & Upload button */}
-      <div className="upload-button-container">
-        <button onClick={handleUpload}>Encrypt & Upload</button>
-      </div>
+      <button onClick={handleUpload}>Encrypt & Upload</button>
 
       <p className="status-message">{status}</p>
     </div>
