@@ -1,7 +1,7 @@
 // client/src/components/P2PTransfer.js
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import Peer from 'simple-peer';
-import { deriveKey, encryptBlob, decryptBlob } from './encryption.js';
+import { deriveKey, encryptBlob, decryptBlob } from './encryption';
 import base58 from 'bs58';
 import './FileEncryptUpload.css';
 
