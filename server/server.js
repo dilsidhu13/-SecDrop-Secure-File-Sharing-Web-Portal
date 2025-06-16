@@ -84,7 +84,7 @@ app.post('/api/upload/init', async (req, res) => {
   res.json({
     transferId,
     uploadUrlTemplate: `/api/upload/${transferId}/chunk/{index}`,
-    downloadUrl:        `/api/download/${transferId}?token=${transferId}`
+     downloadUrl:        `/api/download/${transferId}?code=${transferId}`
   });
 });
 
