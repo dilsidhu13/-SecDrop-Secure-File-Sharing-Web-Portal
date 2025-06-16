@@ -63,9 +63,9 @@ async function findTransfer(transferId) {
   return memTransfers.get(transferId) || null;
 }
 
-async function saveTransfer(transferId) {
+async function saveTransfer(transfer) {
   if (useDb) {
-    await Transfer.save();
+    await transfer.save();
   } else {
     memTransfers.set(transfer.transferId, transfer);
   }
@@ -87,6 +87,7 @@ app.post('/api/upload/init', async (req, res) => {
     downloadUrl:        `/api/download/${transferId}?token=${transferId}`
   });
 });
+
 
 
 // Simple one-step upload used by older clients
@@ -161,14 +162,8 @@ app.put('/api/upload/:transferId/chunk/:index', async (req, res) => {
   req.pipe(busboy);
 });
 
-// 3) Download (streams decrypted file)
-app.get('/api/download/:transferId', async (req, res) => {
-  const { transferId } = req.params;
-  // Here we’re simply using transferId as token; in prod, sign this!
-  const transfer = await findTransfer(transferId);
-  if (!transfer || transfer.status !== 'ready') return res.status(404).send('Not found or not ready.');
-  if (!transfer) return res.status(404).send('Not found or not ready.');
-
+// 3) Download by ID in query
+async function streamTransfer(res, transferId, transfer) {
   res.setHeader('Content-Disposition',
                 `attachment; filename="${transfer.filename}"`);
 
@@ -177,16 +172,13 @@ app.get('/api/download/:transferId', async (req, res) => {
     for (let i = 0; i < transfer.totalChunks; i++) {
       const inPath = path.join(process.env.FILE_STORAGE,
                                `${transferId}.chunk.${i}.enc`);
-        let stream = fs.createReadStream(inPath);
-
-if (transfer.key && transfer.key.length === 32) {
-  const iv = transfer.ivs[i];
-  const decipher = crypto.createDecipheriv('aes-256-gcm', transfer.key, iv);
-  stream = stream.pipe(decipher);
-}
-      // await pipeline of decryption to response
+      let stream = fs.createReadStream(inPath);
+      if (transfer.key && transfer.key.length === 32) {
+        const iv = transfer.ivs[i];
+        const decipher = crypto.createDecipheriv('aes-256-gcm', transfer.key, iv);
+        stream = stream.pipe(decipher);
+      }
       await new Promise((resolve, reject) => {
-        
         stream
           .on('data', (buf) => res.write(buf))
           .on('end', resolve)
@@ -194,7 +186,36 @@ if (transfer.key && transfer.key.length === 32) {
       });
     }
     res.end();
-  })().catch(err => res.status(500).json({ error: err.message }));
+  })(); // <-- Fix: close the IIFE
+}
+
+// 3) Download by ID in path
+app.get('/api/download/:transferId', async (req, res) => {
+  const { transferId } = req.params;
+  const transfer = await findTransfer(transferId);
+  if (!transfer || transfer.status !== 'ready') {
+    return res.status(404).send('Not found or not ready.');
+  }
+  try {
+    await streamTransfer(res, transferId, transfer); // <-- Fix: await the async function
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 3b) Download by code query (?code=UUID)
+app.get('/api/download', async (req, res) => {
+  const { code } = req.query;
+  if (!code) return res.status(400).json({ error: 'code required' });
+  const transfer = await findTransfer(code);
+  if (!transfer || transfer.status !== 'ready') {
+    return res.status(404).send('Not found or not ready.');
+  }
+  try {
+    await streamTransfer(res, code, transfer); // <-- Fix: await the async function
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 const port = process.env.PORT || 4000;
