@@ -24,9 +24,10 @@ const transferSchema = new mongoose.Schema({
 const Transfer = mongoose.model('Transfer', transferSchema);
 
 // --- Connect to MongoDB ---
-mongoose.connect(process.env.MONGO_URI, { useNewUrlParser:true, useUnifiedTopology:true })
-  .then(()=> console.log('MongoDB connected'))
-  .catch(err=> console.error(err));
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log('MongoDB connected'))
+  .catch(err => console.error('MongoDB connection error:', err));
+
 
 // Helper: ensure storage dir
 if (!fs.existsSync(process.env.FILE_STORAGE)) {
