@@ -1,4 +1,4 @@
-require('dotenv').config();
+//      "@testing-library/react": "^11.2.7"
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
 const path      = require('path');
 const fs        = require('fs');
@@ -75,25 +75,13 @@ app.post('/api/upload', (req, res) => {
 
  
 
- const outPath = path.join(process.env.FILE_STORAGE, 
- 
-
- `${transferId}.chunk.0.enc`); 
- 
-
+ const outPath = path.join(process.env.FILE_STORAGE,`${transferId}.chunk.0.enc`); 
  const writeStream = fs.createWriteStream(outPath); 
  
-
- 
-
- 
-
  busboy.on('file', (_, file, info) => { 
- 
 
  if (info && info.filename) filename = info.filename; 
  
-
  file.pipe(writeStream); 
  
 
