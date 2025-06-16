@@ -1,4 +1,5 @@
 require('dotenv').config();
+require('dotenv').config({ path: path.join(__dirname, '../.env') });
 const path      = require('path');
 const fs        = require('fs');
 const express   = require('express');
@@ -52,44 +53,117 @@ app.post('/api/upload/init', async (req, res) => {
   });
 });
 
-// Simple one-step upload used by older clients
-app.post('/api/upload', (req, res) => {
-  const transferId = uuidv4();
-  const busboy = new Busboy({ headers: req.headers });
-  let filename = 'file';
-  let ivBuf = Buffer.alloc(0);
+// Simple one-step upload used by older clients 
+ 
 
-  const outPath = path.join(process.env.FILE_STORAGE,
-                            `${transferId}.chunk.0.enc`);
-  const writeStream = fs.createWriteStream(outPath);
+app.post('/api/upload', (req, res) => { 
+ 
 
-  busboy.on('file', (_, file, info) => {
-    if (info && info.filename) filename = info.filename;
-    file.pipe(writeStream);
-  });
+ const transferId = uuidv4(); 
+ 
 
-  busboy.on('field', (name, val) => {
-    if (name === 'iv') {
-      try { ivBuf = Buffer.from(JSON.parse(val)); } catch { /**/ }
-    }
-  });
+ const busboy = new Busboy({ headers: req.headers }); 
+ 
 
-  busboy.on('finish', async () => {
-    const transfer = new Transfer({
-      transferId,
-      filename,
-      totalChunks: 1,
-      uploaded: 1,
-      key: Buffer.alloc(0),
-      ivs: [ivBuf],
-      status: 'ready'
-    });
-    await transfer.save();
-    res.json({ downloadCode: transferId });
-  });
+ let filename = 'file'; 
+ 
 
-  req.pipe(busboy);
-});
+ let ivBuf = Buffer.alloc(0); 
+ 
+
+ 
+
+ 
+
+ const outPath = path.join(process.env.FILE_STORAGE, 
+ 
+
+ `${transferId}.chunk.0.enc`); 
+ 
+
+ const writeStream = fs.createWriteStream(outPath); 
+ 
+
+ 
+
+ 
+
+ busboy.on('file', (_, file, info) => { 
+ 
+
+ if (info && info.filename) filename = info.filename; 
+ 
+
+ file.pipe(writeStream); 
+ 
+
+ }); 
+ 
+
+ 
+
+ 
+
+ busboy.on('field', (name, val) => { 
+ 
+
+ if (name === 'iv') { 
+ 
+
+ try { ivBuf = Buffer.from(JSON.parse(val)); } catch { /**/ } 
+ 
+
+ } 
+ 
+
+ }); 
+ 
+
+ 
+
+ 
+
+ busboy.on('finish', async () => { 
+ 
+
+ const transfer = new Transfer({ 
+ 
+
+ transferId, 
+ 
+
+ filename, 
+ 
+
+ totalChunks: 1, 
+ 
+
+ uploaded: 1, 
+ 
+
+ key: Buffer.alloc(0), 
+ 
+
+ ivs: [ivBuf], 
+ 
+
+ status: 'ready' 
+ 
+
+ }); 
+ 
+ await transfer.save(); 
+ 
+ res.json({ downloadCode: transferId }); 
+ 
+ }); 
+ 
+ 
+
+ req.pipe(busboy); 
+ 
+
+}); 
 
 
 // 2) Upload chunk (index 0…totalChunks-1)
