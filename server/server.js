@@ -1,6 +1,7 @@
 //      "@testing-library/react": "^11.2.7"
-require('dotenv').config({ path: path.join(__dirname, '.env') });
+
 const path      = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 const fs        = require('fs');
 const express   = require('express');
 const mongoose  = require('mongoose');
