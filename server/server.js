@@ -1,5 +1,5 @@
 //      "@testing-library/react": "^11.2.7"
-require('dotenv').config({ path: path.join(__dirname, '../.env') });
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 const path      = require('path');
 const fs        = require('fs');
 const express   = require('express');
@@ -8,6 +8,9 @@ const crypto    = require('crypto');
 const Busboy    = require('busboy');
 const { v4: uuidv4 } = require('uuid');
 const app       = express();
+
+const memTransfers = new Map(); // in-memory store for transfers
+let useDb = false; // toggle to use DB or in-memory
 
 app.use(express.json());
 app.use(require('cors')());
@@ -26,13 +29,45 @@ const Transfer = mongoose.model('Transfer', transferSchema);
 
 // --- Connect to MongoDB ---
 mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('MongoDB connected'))
-  .catch(err => console.error('MongoDB connection error:', err));
+  .then(() => {
+    useDb = true; // if connected, use DB
+    console.log('Using MongoDB for transfers');
+  })
+  .catch(err => {
+    console.error('MongoDB connection failed, falling back to in-memory storage:', err);
+    useDb = false; // fallback to in-memory
+    console.log('Using in-memory storage for transfers');
+  });
 
 
 // Helper: ensure storage dir
 if (!fs.existsSync(process.env.FILE_STORAGE)) {
   fs.mkdirSync(process.env.FILE_STORAGE, { recursive: true });
+
+}
+
+async function createTransfer(data) {
+  if (useDb) {
+    const t = new Transfer(data);
+    await t.save();
+    return t;
+  } else {
+    memTransfers.set(data.transferId, { ...data });
+    return memTransfers.get(data.transferId);
+  }
+}
+
+async function findTransfer(transferId) {
+  if (useDb) return Transfer.findOne({ transferId });
+  return memTransfers.get(transferId) || null;
+}
+
+async function saveTransfer(transferId) {
+  if (useDb) {
+    await Transfer.save();
+  } else {
+    memTransfers.set(transfer.transferId, transfer);
+  }
 }
 
 // 1) Init upload
@@ -43,8 +78,7 @@ app.post('/api/upload/init', async (req, res) => {
   }
   const transferId = uuidv4();
   const key = crypto.randomBytes(32); // AES-256 key
-  const transfer = new Transfer({ transferId, filename, totalChunks, key, ivs: [] });
-  await transfer.save();
+  const transfer = await createTransfer({ transferId, filename, totalChunks, key, ivs: [] });
 
   res.json({
     transferId,
@@ -53,118 +87,57 @@ app.post('/api/upload/init', async (req, res) => {
   });
 });
 
-// Simple one-step upload used by older clients 
- 
 
-app.post('/api/upload', (req, res) => { 
- 
+// Simple one-step upload used by older clients
+app.post('/api/upload', (req, res) => {
+  const transferId = uuidv4();
+  const busboy = Busboy({ headers: req.headers });
+  let filename = 'file';
+  let ivBuf = Buffer.alloc(0);
 
- const transferId = uuidv4(); 
- 
+  const outPath = path.join(process.env.FILE_STORAGE,
+                            `${transferId}.chunk.0.enc`);
+  const writeStream = fs.createWriteStream(outPath);
 
- const busboy = new Busboy({ headers: req.headers }); 
- 
+  busboy.on('file', (_, file, info) => {
+    if (info && info.filename) filename = info.filename;
+    file.pipe(writeStream);
+  });
 
- let filename = 'file'; 
- 
+  busboy.on('field', (name, val) => {
+    if (name === 'iv') {
+      try { ivBuf = Buffer.from(JSON.parse(val)); } catch { /**/ }
+    }
+  });
 
- let ivBuf = Buffer.alloc(0); 
- 
+  busboy.on('finish', async () => {
+    await createTransfer({
+      transferId,
+      filename,
+      totalChunks: 1,
+      uploaded: 1,
+      key: Buffer.alloc(0),
+      ivs: [ivBuf],
+      status: 'ready'
+    });
+    res.json({ downloadCode: transferId });
+  });
 
- 
-
- 
-
- const outPath = path.join(process.env.FILE_STORAGE,`${transferId}.chunk.0.enc`); 
- const writeStream = fs.createWriteStream(outPath); 
- 
- busboy.on('file', (_, file, info) => { 
-
- if (info && info.filename) filename = info.filename; 
- 
- file.pipe(writeStream); 
- 
-
- }); 
- 
-
- 
-
- 
-
- busboy.on('field', (name, val) => { 
- 
-
- if (name === 'iv') { 
- 
-
- try { ivBuf = Buffer.from(JSON.parse(val)); } catch { /**/ } 
- 
-
- } 
- 
-
- }); 
- 
-
- 
-
- 
-
- busboy.on('finish', async () => { 
- 
-
- const transfer = new Transfer({ 
- 
-
- transferId, 
- 
-
- filename, 
- 
-
- totalChunks: 1, 
- 
-
- uploaded: 1, 
- 
-
- key: Buffer.alloc(0), 
- 
-
- ivs: [ivBuf], 
- 
-
- status: 'ready' 
- 
-
- }); 
- 
- await transfer.save(); 
- 
- res.json({ downloadCode: transferId }); 
- 
- }); 
- 
- 
-
- req.pipe(busboy); 
- 
-
-}); 
+  req.pipe(busboy);
+});
 
 
 // 2) Upload chunk (index 0…totalChunks-1)
 app.put('/api/upload/:transferId/chunk/:index', async (req, res) => {
   const { transferId, index } = req.params;
   const idx = parseInt(index, 10);
-  const transfer = await Transfer.findOne({ transferId });
+  const transfer = await findTransfer(transferId);
   if (!transfer || transfer.status !== 'uploading') {
     return res.status(404).json({ error: 'Invalid transfer' });
   }
 
   // Set up Busboy to read raw stream
-  const busboy = new Busboy({ headers: req.headers });
+  const busboy = Busboy({ headers: req.headers });
   busboy.on('file', (_, fileStream) => {
     // Encrypt chunk on the fly
     const iv = crypto.randomBytes(12);
@@ -180,7 +153,7 @@ app.put('/api/upload/:transferId/chunk/:index', async (req, res) => {
       if (transfer.uploaded === transfer.totalChunks) {
         transfer.status = 'ready';
       }
-      await transfer.save();
+      await saveTransfer(transfer);
       res.json({ ok: true, idx });
     });
   });
@@ -191,7 +164,8 @@ app.put('/api/upload/:transferId/chunk/:index', async (req, res) => {
 app.get('/api/download/:transferId', async (req, res) => {
   const { transferId } = req.params;
   // Here we’re simply using transferId as token; in prod, sign this!
-  const transfer = await Transfer.findOne({ transferId, status: 'ready' });
+  const transfer = await findTransfer(transferId);
+  if (!transfer || transfer.status !== 'ready') return res.status(404).send('Not found or not ready.');
   if (!transfer) return res.status(404).send('Not found or not ready.');
 
   res.setHeader('Content-Disposition',
@@ -211,8 +185,7 @@ if (transfer.key && transfer.key.length === 32) {
 }
       // await pipeline of decryption to response
       await new Promise((resolve, reject) => {
-        fs.createReadStream(inPath)
-          .pipe(decipher)
+        
         stream
           .on('data', (buf) => res.write(buf))
           .on('end', resolve)
