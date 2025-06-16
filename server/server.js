@@ -9,7 +9,7 @@ const { v4: uuidv4 } = require('uuid');
 const app       = express();
 
 app.use(express.json());
-
+app.use(require('cors')());
 // --- Mongo schema for transfer metadata ---
 const transferSchema = new mongoose.Schema({
   transferId:   String,
