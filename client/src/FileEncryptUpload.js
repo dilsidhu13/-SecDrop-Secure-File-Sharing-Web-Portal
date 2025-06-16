@@ -108,7 +108,7 @@ export default function FileEncryptUpload() {
 
       <input
         type="password"
-        placeholder="Enter your Key B"
+        placeholder="Enter your Password to encrypt"
         value={keyB}
         onChange={e => setKeyB(e.target.value)}
       />

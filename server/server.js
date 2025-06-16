@@ -52,6 +52,46 @@ app.post('/api/upload/init', async (req, res) => {
   });
 });
 
+// Simple one-step upload used by older clients
+app.post('/api/upload', (req, res) => {
+  const transferId = uuidv4();
+  const busboy = new Busboy({ headers: req.headers });
+  let filename = 'file';
+  let ivBuf = Buffer.alloc(0);
+
+  const outPath = path.join(process.env.FILE_STORAGE,
+                            `${transferId}.chunk.0.enc`);
+  const writeStream = fs.createWriteStream(outPath);
+
+  busboy.on('file', (_, file, info) => {
+    if (info && info.filename) filename = info.filename;
+    file.pipe(writeStream);
+  });
+
+  busboy.on('field', (name, val) => {
+    if (name === 'iv') {
+      try { ivBuf = Buffer.from(JSON.parse(val)); } catch { /**/ }
+    }
+  });
+
+  busboy.on('finish', async () => {
+    const transfer = new Transfer({
+      transferId,
+      filename,
+      totalChunks: 1,
+      uploaded: 1,
+      key: Buffer.alloc(0),
+      ivs: [ivBuf],
+      status: 'ready'
+    });
+    await transfer.save();
+    res.json({ downloadCode: transferId });
+  });
+
+  req.pipe(busboy);
+});
+
+
 // 2) Upload chunk (index 0…totalChunks-1)
 app.put('/api/upload/:transferId/chunk/:index', async (req, res) => {
   const { transferId, index } = req.params;
@@ -98,14 +138,20 @@ app.get('/api/download/:transferId', async (req, res) => {
   // Stream each chunk in order, decrypting
   (async () => {
     for (let i = 0; i < transfer.totalChunks; i++) {
-      const iv = transfer.ivs[i];
-      const decipher = crypto.createDecipheriv('aes-256-gcm', transfer.key, iv);
       const inPath = path.join(process.env.FILE_STORAGE,
                                `${transferId}.chunk.${i}.enc`);
+        let stream = fs.createReadStream(inPath);
+
+if (transfer.key && transfer.key.length === 32) {
+  const iv = transfer.ivs[i];
+  const decipher = crypto.createDecipheriv('aes-256-gcm', transfer.key, iv);
+  stream = stream.pipe(decipher);
+}
       // await pipeline of decryption to response
       await new Promise((resolve, reject) => {
         fs.createReadStream(inPath)
           .pipe(decipher)
+        stream
           .on('data', (buf) => res.write(buf))
           .on('end', resolve)
           .on('error', reject);
