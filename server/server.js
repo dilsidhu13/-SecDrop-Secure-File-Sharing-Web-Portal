@@ -114,5 +114,10 @@ app.get('/api/download/:transferId', async (req, res) => {
   })().catch(err => res.status(500).json({ error: err.message }));
 });
 
+// Health check or root route
+app.get('/', (req, res) => {
+  res.send('SecDrop backend is running.');
+});
+
 const port = process.env.PORT || 4000;
 app.listen(port, () => console.log(`SecDrop backend listening on ${port}`));
