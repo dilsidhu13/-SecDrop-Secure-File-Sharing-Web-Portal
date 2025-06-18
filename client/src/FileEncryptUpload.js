@@ -8,6 +8,7 @@ export default function FileEncryptUpload() {
   const [file, setFile] = useState(null);
   const [keyB, setKeyB] = useState('');
   const [status, setStatus] = useState('');
+  const [downloadUrl, setDownloadUrl] = useState('');
   const fileInputRef = useRef(null);
 
   // Generate a random Base58 Key A
@@ -69,12 +70,14 @@ export default function FileEncryptUpload() {
       });
 
       if (!res.ok) throw new Error(await res.text());
-      const { downloadCode } = await res.json();
+      const { downloadCode, downloadUrl } = await res.json();
 
       setStatus(`Success! Share this code + your Key B: ${downloadCode}`);
+      setDownloadUrl(downloadUrl || '');
     } catch (err) {
       console.error(err);
       setStatus('Error: ' + err.message);
+      setDownloadUrl('');
     }
   }
 
@@ -116,6 +119,13 @@ export default function FileEncryptUpload() {
       <button onClick={handleUpload}>Encrypt & Upload</button>
 
       <p className="status-message">{status}</p>
+      {downloadUrl && (
+        <div className="download-link">
+          <strong>Download Link:</strong>
+          <a href={downloadUrl} target="_blank" rel="noopener noreferrer">{downloadUrl}</a>
+          <button onClick={() => navigator.clipboard.writeText(downloadUrl)}>Copy Link</button>
+        </div>
+      )}
     </div>
   );
 }

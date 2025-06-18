@@ -175,6 +175,15 @@ app.get('/api/download', async (req, res) => {
   }
 });
 
+// Serve static files from React app
+const clientBuildPath = path.join(__dirname, '../client/build');
+if (fs.existsSync(clientBuildPath)) {
+  app.use(express.static(clientBuildPath));
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(clientBuildPath, 'index.html'));
+  });
+}
+
 const port = process.env.PORT || 4000;
 app.listen(port, () => console.log(`SecDrop backend listening on ${port}`));
 app.listen(port, () => console.log(`Here is the Backend Link :  http://localhost:${port}`));
