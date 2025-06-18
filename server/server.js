@@ -115,8 +115,4 @@ app.get('/api/download/:transferId', async (req, res) => {
 });
 
 const port = process.env.PORT || 4000;
-<<<<<<< HEAD
 app.listen(port, () => console.log(`SecDrop backend listening on ${port}`));
-=======
-app.listen(port, () => console.log(`🚀 SecDrop backend listening on ${port}`));
->>>>>>> 83cfebcf284b6dc102cb5a522cd26a1e781bb456
