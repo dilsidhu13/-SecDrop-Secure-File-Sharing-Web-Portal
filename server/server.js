@@ -185,5 +185,4 @@ if (fs.existsSync(clientBuildPath)) {
 }
 
 const port = process.env.PORT || 4000;
-app.listen(port, () => console.log(`SecDrop backend listening on ${port}`));
-app.listen(port, () => console.log(`Here is the Backend Link :  http://localhost:${port}`));
+app.listen(port, () => console.log(`SecDrop backend listening on ${port} Here is the Backend Link :  http://localhost:${port}`));
