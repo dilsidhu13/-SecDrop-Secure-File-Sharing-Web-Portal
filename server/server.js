@@ -1,5 +1,7 @@
-require('dotenv').config();
+
 const path      = require('path');
+const envPath   = path.join(__dirname, '.env');
+require('dotenv').config({ path: envPath });
 const fs        = require('fs');
 const express   = require('express');
 const mongoose  = require('mongoose');
@@ -55,7 +57,7 @@ app.post('/api/upload', upload.single('file'), (req, res) => {
     ext: req.uploadExt
   };
   fs.writeFileSync(
-    path.join(process.env.FILE_STORAGE, `${req.uploadId}.json`),
+    
     path.join(storageDir, `${req.uploadId}.json`),
     JSON.stringify(meta)
   );
