@@ -17,31 +17,19 @@ export default function FileEncryptUpload() {
     return base58.encode(randomBytes);
   }, []);
 
-  // Handle file selection
-  const handleFileSelect = useCallback((selectedFile) => {
-    setFile(selectedFile);
-    setStatus(`Selected file: ${selectedFile.name}`);
-  }, []);
+  const handleFileSelect = (selected) => {
+    setFile(selected);
+    setDownloadUrl('');
+    setStatus('');
+  };
 
-  // Drag-and-drop handlers
+  const handleChooseClick = () => fileInputRef.current.click();
+  const handleDragOver = (e) => { e.preventDefault(); e.stopPropagation(); };
   const handleDrop = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const droppedFiles = e.dataTransfer.files;
-    if (droppedFiles && droppedFiles.length > 0) {
-      handleFileSelect(droppedFiles[0]);
-      e.dataTransfer.clearData();
+    e.preventDefault(); e.stopPropagation();
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFileSelect(e.dataTransfer.files[0]);
     }
-  };
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-  };
-
-  // Fallback for choosing file button
-  const handleChooseClick = () => {
-    fileInputRef.current && fileInputRef.current.click();
   };
 
   async function handleUpload() {
@@ -60,7 +48,8 @@ export default function FileEncryptUpload() {
 
       setStatus('Uploading…');
       const form = new FormData();
-      form.append('file', new Blob([ciphertext], { type: file.type }));
+      // Preserve original filename in upload
+      form.append('file', new Blob([ciphertext], { type: file.type }), file.name);
       form.append('iv', JSON.stringify(Array.from(iv)));
       form.append('keyA', keyA);
 
@@ -70,10 +59,12 @@ export default function FileEncryptUpload() {
       });
 
       if (!res.ok) throw new Error(await res.text());
-      const { downloadCode, downloadUrl } = await res.json();
+      const { id } = await res.json();
+      const downloadCode = id;
+      const url = `${window.location.origin}/api/download/${id}`;
 
       setStatus(`Success! Share this code + your Key B: ${downloadCode}`);
-      setDownloadUrl(downloadUrl || '');
+      setDownloadUrl(url);
     } catch (err) {
       console.error(err);
       setStatus('Error: ' + err.message);
@@ -82,7 +73,7 @@ export default function FileEncryptUpload() {
   }
 
   return (
-    <div className="file-upload-container">
+    <div className="file-encrypt-upload">
       <h2>SecDrop: Drag & Drop or Choose File</h2>
 
       <div
@@ -95,7 +86,6 @@ export default function FileEncryptUpload() {
         ) : (
           <p>Drag & drop a file here</p>
         )}
-        {/* Hidden file input for both drag-and-drop and choose button */}
         <input
           type="file"
           ref={fileInputRef}
@@ -103,8 +93,7 @@ export default function FileEncryptUpload() {
           onChange={e => e.target.files[0] && handleFileSelect(e.target.files[0])}
         />
       </div>
-      
-<break> </break>
+
       <button type="button" onClick={handleChooseClick} className="choose-button">
         Choose File
       </button>
@@ -122,8 +111,12 @@ export default function FileEncryptUpload() {
       {downloadUrl && (
         <div className="download-link">
           <strong>Download Link:</strong>
-          <a href={downloadUrl} target="_blank" rel="noopener noreferrer">{downloadUrl}</a>
-          <button onClick={() => navigator.clipboard.writeText(downloadUrl)}>Copy Link</button>
+          <a href={downloadUrl} target="_blank" rel="noopener noreferrer">
+            {downloadUrl}
+          </a>
+          <button onClick={() => navigator.clipboard.writeText(downloadUrl)}>
+            Copy Link
+          </button>
         </div>
       )}
     </div>
