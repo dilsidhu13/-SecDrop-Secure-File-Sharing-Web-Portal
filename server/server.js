@@ -34,7 +34,7 @@ mongoose.connect(process.env.MONGO_URI, { useNewUrlParser:true, useUnifiedTopolo
   .catch(err=> console.error(err));
 // Multer setup for simple single-file uploads (client-side encrypted)
 const storage = multer.diskStorage({
-  destination: storageDir,
+  destination: process.env.FILE_STORAGE,
   filename: (req, file, cb) => {
     const id = uuidv4();
     const ext = path.extname(file.originalname) || '.enc';
@@ -57,20 +57,15 @@ app.post('/api/upload', upload.single('file'), (req, res) => {
     ext: req.uploadExt
   };
   fs.writeFileSync(
-    
-    path.join(storageDir, `${req.uploadId}.json`),
+    path.join(process.env.FILE_STORAGE, `${req.uploadId}.json`),
     JSON.stringify(meta)
   );
-const baseUrl = `${req.protocol}://${req.get('host')}`;
+
   res.json({
     downloadCode: req.uploadId,
-    downloadUrl: `${baseUrl}/api/download/${req.uploadId}`
+    downloadUrl: `/api/download/${req.uploadId}`
   });
 });
-// Helper: ensure storage dir
-if (!fs.existsSync(storageDir)) {
-  fs.mkdirSync(storageDir, { recursive: true });
-}
 
 // 1) Init upload
 app.post('/api/upload/init', async (req, res) => {
@@ -123,7 +118,25 @@ app.put('/api/upload/:transferId/chunk/:index', async (req, res) => {
   req.pipe(busboy);
 });
 
-// 3) Download (streams decrypted file)
+// 3) Download endpoint
+// First handle simple uploads stored with metadata
+app.get('/api/download/:id', (req, res, next) => {
+  const id = req.params.id;
+  const metaPath = path.join(process.env.FILE_STORAGE, `${id}.json`);
+  if (fs.existsSync(metaPath)) {
+    try {
+      const meta = JSON.parse(fs.readFileSync(metaPath));
+      const filePath = path.join(process.env.FILE_STORAGE, `${id}${meta.ext}`);
+      return res.download(filePath, meta.originalName);
+    } catch (e) {
+      return res.status(500).json({ error: 'Failed to read file' });
+    }
+  }
+  return next();
+});
+
+// Legacy chunked download (streams decrypted file)
+
 app.get('/api/download/:transferId', async (req, res) => {
   const { transferId } = req.params;
   // Here we’re simply using transferId as token; in prod, sign this!
