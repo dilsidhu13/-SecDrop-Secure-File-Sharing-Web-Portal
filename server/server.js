@@ -5,6 +5,7 @@ const express   = require('express');
 const mongoose  = require('mongoose');
 const crypto    = require('crypto');
 const Busboy    = require('busboy');
+const multer    = require('multer');
 const { v4: uuidv4 } = require('uuid');
 const app       = express();
 
@@ -27,7 +28,40 @@ const Transfer = mongoose.model('Transfer', transferSchema);
 mongoose.connect(process.env.MONGO_URI, { useNewUrlParser:true, useUnifiedTopology:true })
   .then(()=> console.log('MongoDB connected'))
   .catch(err=> console.error(err));
+// Multer setup for simple single-file uploads (client-side encrypted)
+const storage = multer.diskStorage({
+  destination: process.env.FILE_STORAGE,
+  filename: (req, file, cb) => {
+    const id = uuidv4();
+    const ext = path.extname(file.originalname) || '.enc';
+    req.uploadId = id;
+    req.uploadExt = ext;
+    cb(null, `${id}${ext}`);
+  }
+});
+const upload = multer({ storage });
 
+// Simple upload endpoint expected by the React client
+app.post('/api/upload', upload.single('file'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No file provided' });
+  }
+
+  // Persist minimal metadata so the download route can locate the file
+  const meta = {
+    originalName: req.file.originalname,
+    ext: req.uploadExt
+  };
+  fs.writeFileSync(
+    path.join(process.env.FILE_STORAGE, `${req.uploadId}.json`),
+    JSON.stringify(meta)
+  );
+
+  res.json({
+    downloadCode: req.uploadId,
+    downloadUrl: `/api/download/${req.uploadId}`
+  });
+});
 // Helper: ensure storage dir
 if (!fs.existsSync(process.env.FILE_STORAGE)) {
   fs.mkdirSync(process.env.FILE_STORAGE, { recursive: true });
