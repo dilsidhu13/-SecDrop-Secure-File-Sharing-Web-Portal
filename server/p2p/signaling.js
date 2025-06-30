@@ -32,4 +32,5 @@ io.on('connection', socket => {
 const PORT = process.env.P2P_PORT || 5000;
 server.listen(PORT, () => {
   console.log(`🚦 P2P signaling server listening on port ${PORT}`);
+  console.log(`🌐 Access it at http://localhost:${PORT}`);
 });
