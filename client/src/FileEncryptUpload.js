@@ -59,9 +59,9 @@ export default function FileEncryptUpload() {
       });
 
       if (!res.ok) throw new Error(await res.text());
-      const { id } = await res.json();
-      const downloadCode = id;
-      const url = `${window.location.origin}/api/download/${id}`;
+      // server returns { downloadCode, downloadUrl }
+      const { downloadCode, downloadUrl } = await res.json();
+      const url = `${window.location.origin}${downloadUrl}`;
 
       setStatus(`Success! Share this code + your Key B: ${downloadCode}`);
       setDownloadUrl(url);
