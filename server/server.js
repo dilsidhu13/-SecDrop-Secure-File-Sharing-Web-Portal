@@ -1,19 +1,14 @@
-
+require('dotenv').config();
 const path      = require('path');
-const envPath   = path.join(__dirname, '.env');
-require('dotenv').config({ path: envPath });
 const fs        = require('fs');
 const express   = require('express');
 const mongoose  = require('mongoose');
 const crypto    = require('crypto');
 const Busboy    = require('busboy');
-const multer    = require('multer');
 const { v4: uuidv4 } = require('uuid');
 const app       = express();
 
 app.use(express.json());
-// Resolve storage directory once so relative paths work regardless of CWD
-const storageDir = path.resolve(__dirname, process.env.FILE_STORAGE || 'data');
 
 // --- Mongo schema for transfer metadata ---
 const transferSchema = new mongoose.Schema({
@@ -32,40 +27,11 @@ const Transfer = mongoose.model('Transfer', transferSchema);
 mongoose.connect(process.env.MONGO_URI, { useNewUrlParser:true, useUnifiedTopology:true })
   .then(()=> console.log('MongoDB connected'))
   .catch(err=> console.error(err));
-// Multer setup for simple single-file uploads (client-side encrypted)
-const storage = multer.diskStorage({
-  destination: process.env.FILE_STORAGE,
-  filename: (req, file, cb) => {
-    const id = uuidv4();
-    const ext = path.extname(file.originalname) || '.enc';
-    req.uploadId = id;
-    req.uploadExt = ext;
-    cb(null, `${id}${ext}`);
-  }
-});
-const upload = multer({ storage });
 
-// Simple upload endpoint expected by the React client
-app.post('/api/upload', upload.single('file'), (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ error: 'No file provided' });
-  }
-
-  // Persist minimal metadata so the download route can locate the file
-  const meta = {
-    originalName: req.file.originalname,
-    ext: req.uploadExt
-  };
-  fs.writeFileSync(
-    path.join(process.env.FILE_STORAGE, `${req.uploadId}.json`),
-    JSON.stringify(meta)
-  );
-
-  res.json({
-    downloadCode: req.uploadId,
-    downloadUrl: `/api/download/${req.uploadId}`
-  });
-});
+// Helper: ensure storage dir
+if (!fs.existsSync(process.env.FILE_STORAGE)) {
+  fs.mkdirSync(process.env.FILE_STORAGE, { recursive: true });
+}
 
 // 1) Init upload
 app.post('/api/upload/init', async (req, res) => {
@@ -77,11 +43,11 @@ app.post('/api/upload/init', async (req, res) => {
   const key = crypto.randomBytes(32); // AES-256 key
   const transfer = new Transfer({ transferId, filename, totalChunks, key, ivs: [] });
   await transfer.save();
-  const baseUrl = `${req.protocol}://${req.get('host')}`;
+
   res.json({
     transferId,
-   uploadUrlTemplate: `${baseUrl}/api/upload/${transferId}/chunk/{index}`,
-   downloadUrl:        `${baseUrl}/api/download/${transferId}?token=${transferId}`
+    uploadUrlTemplate: `/api/upload/${transferId}/chunk/{index}`,
+    downloadUrl:        `/api/download/${transferId}?token=${transferId}`
   });
 });
 
@@ -100,7 +66,7 @@ app.put('/api/upload/:transferId/chunk/:index', async (req, res) => {
     // Encrypt chunk on the fly
     const iv = crypto.randomBytes(12);
     const cipher = crypto.createCipheriv('aes-256-gcm', transfer.key, iv);
-    const outPath = path.join(storageDir,
+    const outPath = path.join(process.env.FILE_STORAGE,
                               `${transferId}.chunk.${idx}.enc`);
     const writeStream = fs.createWriteStream(outPath);
     fileStream.pipe(cipher).pipe(writeStream);
@@ -118,25 +84,7 @@ app.put('/api/upload/:transferId/chunk/:index', async (req, res) => {
   req.pipe(busboy);
 });
 
-// 3) Download endpoint
-// First handle simple uploads stored with metadata
-app.get('/api/download/:id', (req, res, next) => {
-  const id = req.params.id;
-  const metaPath = path.join(process.env.FILE_STORAGE, `${id}.json`);
-  if (fs.existsSync(metaPath)) {
-    try {
-      const meta = JSON.parse(fs.readFileSync(metaPath));
-      const filePath = path.join(process.env.FILE_STORAGE, `${id}${meta.ext}`);
-      return res.download(filePath, meta.originalName);
-    } catch (e) {
-      return res.status(500).json({ error: 'Failed to read file' });
-    }
-  }
-  return next();
-});
-
-// Legacy chunked download (streams decrypted file)
-
+// 3) Download (streams decrypted file)
 app.get('/api/download/:transferId', async (req, res) => {
   const { transferId } = req.params;
   // Here we’re simply using transferId as token; in prod, sign this!
@@ -151,7 +99,7 @@ app.get('/api/download/:transferId', async (req, res) => {
     for (let i = 0; i < transfer.totalChunks; i++) {
       const iv = transfer.ivs[i];
       const decipher = crypto.createDecipheriv('aes-256-gcm', transfer.key, iv);
-      const inPath = path.join(storageDir,
+      const inPath = path.join(process.env.FILE_STORAGE,
                                `${transferId}.chunk.${i}.enc`);
       // await pipeline of decryption to response
       await new Promise((resolve, reject) => {
