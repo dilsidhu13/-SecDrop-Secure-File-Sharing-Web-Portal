@@ -1,14 +1,14 @@
 const express = require('express');
 const multer = require('multer'); // used for uploading files
 //const {uploadfile, downloadfile} =require('../encryptdecrpyt/filesencrpytdecrpyt');
-const {uploadfile, downloadfile} = require('../encryptdecrpyt/filesencryptdecrypt'); //importing the functions from filesencryptdecrypt.js
+const { uploadFile, downloadFile} = require('../encryptdecrpyt/filesencryptdecrypt'); //importing the functions from filesencryptdecrypt.js
 //for better organization
 const router = express.Router();
-const upload = multer({dest:"uploads/"}); 
+const upload = multer({dest:'uploads/'}); 
 
 //defining routes
-router.post('/upload'. upload.single('file'), uploadfile);
-router.get('/download/:filename', downloadfile);
+router.post('/upload', upload.single('file'), uploadFile);
+router.get('/download/:filename', downloadFile);
 module.exports=router;
 
 
