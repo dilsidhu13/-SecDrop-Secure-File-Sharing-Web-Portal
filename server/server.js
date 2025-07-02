@@ -7,8 +7,11 @@ const crypto    = require('crypto');
 const Busboy    = require('busboy');
 const { v4: uuidv4 } = require('uuid');
 const app       = express();
-
+const fileRoutes    = require('./routes/files'); // import routes
 app.use(express.json());
+
+// route for encrypted & decrypt  file upload/download
+app.use('/api/crypto/', fileRoutes); // use the file routes
 
 // --- Mongo schema for transfer metadata ---
 const transferSchema = new mongoose.Schema({

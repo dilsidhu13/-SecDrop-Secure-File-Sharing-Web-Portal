@@ -64,15 +64,17 @@ export default function FileEncryptUpload() {
       form.append('iv', JSON.stringify(Array.from(iv)));
       form.append('keyA', keyA);
 
+      //const res = await fetch('/api/upload', {
       const res = await fetch('/api/upload', {
         method: 'POST',
         body: form,
       });
 
       if (!res.ok) throw new Error(await res.text());
-      const { downloadCode, downloadUrl } = await res.json();
-
-      setStatus(`Success! Share this code + your Key B: ${downloadCode}`);
+      //const { downloadCode, downloadUrl } = await res.json();
+      const { downloadCode, key:encKey,iv:encIv} = await res.json();
+      //setStatus(`Success! Share this code + your Key B: ${downloadCode}`);
+      setStatus(`Success! Save the download Link and provided key /iv.`);
       setDownloadUrl(downloadUrl || '');
     } catch (err) {
       console.error(err);

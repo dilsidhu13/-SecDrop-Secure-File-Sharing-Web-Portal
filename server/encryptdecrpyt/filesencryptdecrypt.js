@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const fs = require('fs');
+const path = require('path');
 
 //encrpyt the file
 const encryptFile = (filePath) => {
@@ -37,11 +38,13 @@ const uploadFile = (req, res) => {
       return res.status(400).send("No file uploaded.");
     }
     const { key, iv, encryptedFile } = encryptFile(req.file.path);
+    const encName = path.basename(encryptedFile);
     res.status(200).send({
       message: "File uploaded and encrypted successfully.",
       encryptedFile,
       key: key.toString("hex"),
       iv: iv.toString("hex"),
+      downloadUrl: `/api/download/${encName}?key=${key.toString("hex")}&iv=${iv.toString("hex")}`,
     });
   } catch (error) {
     res.status(500).send({ message: "File upload failed.", error });
