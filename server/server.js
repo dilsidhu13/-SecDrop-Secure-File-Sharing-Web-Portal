@@ -35,14 +35,15 @@ if (!fs.existsSync(process.env.FILE_STORAGE)) {
 
 // Convenience endpoint for simple uploads used by the older client
 app.post('/api/upload', (req, res) => {
-  const busboy = Busboy({ headers: req.headers }); // FIX: remove 'new'
+  const busboy = Busboy({ headers: req.headers }); // FIX: use as function, not constructor
   const transferId = uuidv4();
   const key = crypto.randomBytes(32); // server-side encryption key
   const iv = crypto.randomBytes(12);
   let filename = 'upload.bin';
 
-  busboy.on('file', (_, fileStream, name) => {
-    if (name) filename = name;
+  // FIX: Use info.filename for correct filename extraction
+  busboy.on('file', (_, fileStream, info) => {
+    if (info && info.filename) filename = info.filename;
     const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
     const outPath = path.join(process.env.FILE_STORAGE,
                               `${transferId}.chunk.0.enc`);
@@ -99,7 +100,7 @@ app.put('/api/upload/:transferId/chunk/:index', async (req, res) => {
   }
 
   // Set up Busboy to read raw stream
-  const busboy = Busboy({ headers: req.headers }); // FIX: remove 'new'
+  const busboy = Busboy({ headers: req.headers }); // FIX: use as function, not constructor
   busboy.on('file', (_, fileStream) => {
     // Encrypt chunk on the fly
     const iv = crypto.randomBytes(12);
