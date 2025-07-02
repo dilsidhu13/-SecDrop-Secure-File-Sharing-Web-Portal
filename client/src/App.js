@@ -1,11 +1,14 @@
 // src/App.js
 import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import FileEncryptUpload from './FileEncryptUpload.js';
+import DownloadPage from './DownloadPage.js';
 import logo from './logo.webp';   // logo Photo
 import './App.css';
 
 function App() {
   return (
+    <Router>
     <div className="App">
       <header className="App-header">
         {/* Logo on the left */}
@@ -19,9 +22,14 @@ function App() {
       </header>
 
       <main>
-        <FileEncryptUpload />
+          <Routes>
+          <Route path="/" element={<FileEncryptUpload />} />
+          <Route path="/download/:id" element={<DownloadPage />} />
+        </Routes>
       </main>
     </div>
+    </Router>
+
   );
 }
 

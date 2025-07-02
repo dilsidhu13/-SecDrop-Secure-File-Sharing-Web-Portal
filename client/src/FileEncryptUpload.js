@@ -1,7 +1,5 @@
 // client/src/components/FileEncryptUpload.js
-import React, { useState, useCallback, useRef } from 'react';
-import { deriveKey, encryptBlob } from './encryption.js';
-import base58 from 'bs58';
+import React, { useState, useRef } from 'react';
 import './FileEncryptUpload.css';
 
 export default function FileEncryptUpload() {
@@ -11,17 +9,11 @@ export default function FileEncryptUpload() {
   const [downloadUrl, setDownloadUrl] = useState('');
   const fileInputRef = useRef(null);
 
-  // Generate a random Base58 Key A
-  const genKeyA = useCallback(() => {
-    const randomBytes = crypto.getRandomValues(new Uint8Array(16));
-    return base58.encode(randomBytes);
-  }, []);
-
   // Handle file selection
-  const handleFileSelect = useCallback((selectedFile) => {
+  const handleFileSelect = (selectedFile) => {
     setFile(selectedFile);
     setStatus(`Selected file: ${selectedFile.name}`);
-  }, []);
+  };
 
   // Drag-and-drop handlers
   const handleDrop = (e) => {
@@ -46,34 +38,54 @@ export default function FileEncryptUpload() {
 
   async function handleUpload() {
     if (!file || !keyB) {
-      setStatus('Please select a file and enter Key B.');
+      setStatus('Please select a file and enter your password.');
       return;
     }
 
     try {
-      setStatus('Deriving key…');
-      const keyA = genKeyA();
-      const cryptoKey = await deriveKey(keyA, keyB);
-
       setStatus('Encrypting file…');
-      const { ciphertext, iv } = await encryptBlob(file, cryptoKey);
+      // Derive key using only keyB and a fixed salt
+      const encoder = new TextEncoder();
+      const salt = encoder.encode('SecDropSalt');
+      const passphrase = encoder.encode(keyB);
+      const baseKey = await window.crypto.subtle.importKey(
+        'raw', passphrase, { name: 'PBKDF2' }, false, ['deriveKey']
+      );
+      const cryptoKey = await window.crypto.subtle.deriveKey(
+        {
+          name: 'PBKDF2',
+          salt,
+          iterations: 100000,
+          hash: 'SHA-256'
+        },
+        baseKey,
+        { name: 'AES-GCM', length: 256 },
+        false,
+        ['encrypt', 'decrypt']
+      );
+
+      const iv = window.crypto.getRandomValues(new Uint8Array(12));
+      const data = new Uint8Array(await file.arrayBuffer());
+      const ciphertext = await window.crypto.subtle.encrypt(
+        { name: 'AES-GCM', iv },
+        cryptoKey,
+        data
+      );
 
       setStatus('Uploading…');
       const form = new FormData();
       form.append('file', new Blob([ciphertext], { type: file.type }));
       form.append('iv', JSON.stringify(Array.from(iv)));
-      form.append('keyA', keyA);
-   
+
       const res = await fetch('/api/crypto/upload', {
         method: 'POST',
         body: form,
       });
 
       if (!res.ok) throw new Error(await res.text());
-      
-      const { downloadUrl, key: encKey, iv: encIv } = await res.json();
+      const { downloadUrl } = await res.json();
 
-      setStatus('Success! Save the download link and provided key/iv.');
+      setStatus('Success! Save the download link below: ');
       setDownloadUrl(downloadUrl || '');
     } catch (err) {
       console.error(err);
@@ -104,21 +116,16 @@ export default function FileEncryptUpload() {
           onChange={e => e.target.files[0] && handleFileSelect(e.target.files[0])}
         />
       </div>
-      
-<break> </break>
       <button type="button" onClick={handleChooseClick} className="choose-button">
         Choose File
       </button>
-
       <input
         type="password"
-        placeholder="Enter your Password to encrypt"
+        placeholder="Enter your password to encrypt"
         value={keyB}
         onChange={e => setKeyB(e.target.value)}
       />
-
       <button onClick={handleUpload}>Encrypt & Upload</button>
-
       <p className="status-message">{status}</p>
       {downloadUrl && (
         <div className="download-link">

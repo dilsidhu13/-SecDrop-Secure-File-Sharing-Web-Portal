@@ -1,82 +1,74 @@
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
+const { pipeline } = require('stream');
+const { promisify } = require('util');
 
-//encrpyt the file
-const encryptFile = (filePath) => {
-  const algorithm = "aes-256-cbc";
-  const key = crypto.randomBytes(32); // 32-byte key
-  const iv = crypto.randomBytes(16); // 16-byte IV
+const pipelineAsync = promisify(pipeline);
 
-  const cipher = crypto.createCipheriv(algorithm, key, iv);
-  const input = fs.createReadStream(filePath);
-  const output = fs.createWriteStream(`${filePath}.enc`);
-
- 
-   return new Promise((resolve, reject) => {
-    input.pipe(cipher).pipe(output)
-      .on('finish', () => resolve({ key, iv, encryptedFile: `${filePath}.enc` }))
-      .on('error', reject);
+// In-Memory store mapping id -> { path, originalName, iv }
+const uploads = {};
+const FIXED_SALT = 'SecDropSalt';
+async function deriveKey(keyB) {
+  return new Promise((resolve, reject) => {
+    crypto.pbkdf2(keyB, FIXED_SALT, 100000, 32, 'sha256', (err, derivedKey) => {
+      if (err) reject(err);
+      else resolve(derivedKey);
+    });
   });
-};
+}
 
 // Decrypt a file
-const decryptFile = (encryptedFilePath, outputFilePath, key, iv) => {
-  const algorithm = "aes-256-cbc";
-  const decipher = crypto.createDecipheriv(
-    algorithm,
-    Buffer.from(key, "hex"),
-    Buffer.from(iv, "hex")
+async function decryptFile(src, dest, key, iv) {
+  const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv, {
+    authTagLength: 16,
+  });
+  await pipelineAsync(
+    fs.createReadStream(src),
+    decipher,
+    fs.createWriteStream(dest)
   );
+}
 
-  const input = fs.createReadStream(encryptedFilePath);
-  const output = fs.createWriteStream(outputFilePath);
-
-   return new Promise((resolve, reject) => {
-    input.pipe(decipher).pipe(output)
-      .on('finish', resolve)
-      .on('error', reject);
-  })
-};
-
-// Upload file endpoint
- const uploadFile = (req, res) => {
- if (!req.file) {
-    return res.status(400).send("No file uploaded.");
+// Upload already-encrypted file with iv
+async function uploadFile(req, res) {
+  try {
+    const { iv } = req.body;
+    if (!req.file || !iv) {
+      return res.status(400).json({ error: 'file and iv required' });
+    }
+    const id = crypto.randomUUID();
+    uploads[id] = {
+      path: req.file.path,
+      originalName: req.file.originalname,
+      iv: JSON.parse(iv),
+    };
+    res.json({
+      message: 'File uploaded successfully',
+      downloadUrl: `/download/${id}`,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
-  encryptFile(req.file.path)
-    .then(({ key, iv, encryptedFile }) => {
-      const encName = path.basename(encryptedFile);
-      res.status(200).send({
-        message: "File uploaded and encrypted successfully.",
-        encryptedFile,
-        key: key.toString("hex"),
-        iv: iv.toString("hex"),
-        downloadUrl: `/api/crypto/download/${encName}?key=${key.toString("hex")}&iv=${iv.toString("hex")}`
-      });
-    })
-    .catch((error) => {
-      res.status(500).send({ message: "File upload failed.", error });
-    });
-};
+}
 
-// Download file endpoint
-const downloadFile = (req, res) => {
-  const { filename } = req.params;
-  const { key, iv } = req.query;
-  const encryptedFilePath = `uploads/${filename}`;
-  const decryptedFilePath = `uploads/decrypted-${filename}`;
-
-  decryptFile(encryptedFilePath, decryptedFilePath, key, iv)
-    .then(() => {
-      res.download(decryptedFilePath, () => {
-        fs.unlinkSync(decryptedFilePath); // Delete decrypted file after sending
-      });
-    })
-    .catch((error) => {
-      res.status(500).send({ message: "File download failed.", error });
-    });
-  
-};
+// decrypt and send file after verifying key B
+async function downloadFile(req, res) {
+  const { id } = req.params;
+  const { keyB } = req.body;
+  const meta = uploads[id];
+  if (!meta) return res.status(404).send('Invalid link');
+  if (!keyB) return res.status(400).send('Key B required');
+  try {
+    const key = await deriveKey(keyB);
+    const tmpPath = `${meta.path}.dec`;
+    await decryptFile(meta.path, tmpPath, key, Buffer.from(meta.iv));
+    res.download(tmpPath, meta.originalName, () => fs.unlinkSync(tmpPath));
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Decryption failed');
+  }
+}
 
 module.exports = { uploadFile, downloadFile };
+module.exports._uploads = uploads;
