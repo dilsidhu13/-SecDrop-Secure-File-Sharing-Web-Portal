@@ -33,6 +33,44 @@ if (!fs.existsSync(process.env.FILE_STORAGE)) {
   fs.mkdirSync(process.env.FILE_STORAGE, { recursive: true });
 }
 
+// Convenience endpoint for simple uploads used by the older client
+app.post('/api/upload', (req, res) => {
+  const busboy = Busboy({ headers: req.headers }); // FIX: remove 'new'
+  const transferId = uuidv4();
+  const key = crypto.randomBytes(32); // server-side encryption key
+  const iv = crypto.randomBytes(12);
+  let filename = 'upload.bin';
+
+  busboy.on('file', (_, fileStream, name) => {
+    if (name) filename = name;
+    const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
+    const outPath = path.join(process.env.FILE_STORAGE,
+                              `${transferId}.chunk.0.enc`);
+    const writeStream = fs.createWriteStream(outPath);
+    fileStream.pipe(cipher).pipe(writeStream);
+    writeStream.on('finish', async () => {
+      const transfer = new Transfer({
+        transferId,
+        filename,
+        totalChunks: 1,
+        uploaded: 1,
+        key,
+        ivs: [iv],
+        status: 'ready'
+      });
+      await transfer.save();
+      res.json({
+        downloadCode: transferId,
+        downloadUrl: `/api/download/${transferId}?token=${transferId}`
+      });
+    });
+    writeStream.on('error', err => {
+      res.status(500).json({ error: err.message });
+    });
+  });
+
+  req.pipe(busboy);
+});
 // 1) Init upload
 app.post('/api/upload/init', async (req, res) => {
   const { filename, totalChunks } = req.body;
@@ -61,7 +99,7 @@ app.put('/api/upload/:transferId/chunk/:index', async (req, res) => {
   }
 
   // Set up Busboy to read raw stream
-  const busboy = new Busboy({ headers: req.headers });
+  const busboy = Busboy({ headers: req.headers }); // FIX: remove 'new'
   busboy.on('file', (_, fileStream) => {
     // Encrypt chunk on the fly
     const iv = crypto.randomBytes(12);
