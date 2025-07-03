@@ -1,6 +1,5 @@
 const crypto = require('crypto');
 const fs = require('fs');
-const path = require('path');
 const { pipeline } = require('stream');
 const { promisify } = require('util');
 
@@ -20,13 +19,48 @@ async function deriveKey(keyB) {
 
 // Decrypt a file
 async function decryptFile(src, dest, key, iv) {
-  const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv, {
-    authTagLength: 16,
-  });
+  const { size } = await fs.promises.stat(src);
+  if (size < 16) {
+    throw new Error('Invalid encrypted file');
+  }
+  const tag = Buffer.alloc(16);
+  const fd = await fs.promises.open(src, 'r');
+  await fd.read(tag, 0, 16, size - 16);
+  await fd.close();
+
+  const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
+  decipher.setAuthTag(tag);
   await pipelineAsync(
-    fs.createReadStream(src),
+    fs.createReadStream(src, { start: 0, end: size - 17 }),
     decipher,
     fs.createWriteStream(dest)
+  );
+}
+
+// Stream decryption result directly to response without temp file
+async function pipeDecrypted(src, res, key, iv, filename) {
+  const { size } = await fs.promises.stat(src);
+  if (size < 16) {
+    throw new Error('Invalid encrypted file');
+  }
+  const tag = Buffer.alloc(16);
+  const fd = await fs.promises.open(src, 'r');
+  await fd.read(tag, 0, 16, size - 16);
+  await fd.close();
+
+  res.setHeader(
+    'Content-Disposition',
+    `attachment; filename="${filename}"`
+  );
+  res.setHeader('Content-Type', 'application/octet-stream');
+
+  const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
+  decipher.setAuthTag(tag);
+
+  await pipelineAsync(
+    fs.createReadStream(src, { start: 0, end: size - 17 }),
+    decipher,
+    res
   );
 }
 
@@ -61,9 +95,13 @@ async function downloadFile(req, res) {
   if (!keyB) return res.status(400).send('Key B required');
   try {
     const key = await deriveKey(keyB);
-    const tmpPath = `${meta.path}.dec`;
-    await decryptFile(meta.path, tmpPath, key, Buffer.from(meta.iv));
-    res.download(tmpPath, meta.originalName, () => fs.unlinkSync(tmpPath));
+    await pipeDecrypted(
+      meta.path,
+      res,
+      key,
+      Buffer.from(meta.iv),
+      meta.originalName
+    );
   } catch (err) {
     console.error(err);
     res.status(500).send('Decryption failed');
