@@ -71,4 +71,3 @@ async function downloadFile(req, res) {
 }
 
 module.exports = { uploadFile, downloadFile };
-module.exports._uploads = uploads;
