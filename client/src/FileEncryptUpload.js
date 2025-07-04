@@ -1,138 +1,73 @@
 // client/src/components/FileEncryptUpload.js
-import React, { useState, useRef } from 'react';
-import './FileEncryptUpload.css';
+import React, { useState } from 'react';
 
+/**
+ * FileEncryptUpload component
+ * Select a file and passphrase, upload to encrypt endpoint,
+ * then display a download link for the encrypted file.
+ */
 export default function FileEncryptUpload() {
   const [file, setFile] = useState(null);
-  const [keyB, setKeyB] = useState('');
+  const [passphrase, setPassphrase] = useState('');
   const [status, setStatus] = useState('');
   const [downloadUrl, setDownloadUrl] = useState('');
-  const fileInputRef = useRef(null);
 
-  // Handle file selection
-  const handleFileSelect = (selectedFile) => {
-    setFile(selectedFile);
-    setStatus(`Selected file: ${selectedFile.name}`);
+  const onFileChange = (e) => {
+    const selected = e.target.files[0] || null;
+    setFile(selected);
+    setStatus('');
+    setDownloadUrl('');
   };
 
-  // Drag-and-drop handlers
-  const handleDrop = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const droppedFiles = e.dataTransfer.files;
-    if (droppedFiles && droppedFiles.length > 0) {
-      handleFileSelect(droppedFiles[0]);
-      e.dataTransfer.clearData();
-    }
-  };
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-  };
-
-  // Fallback for choosing file button
-  const handleChooseClick = () => {
-    fileInputRef.current && fileInputRef.current.click();
-  };
-
-  async function handleUpload() {
-    if (!file || !keyB) {
-      setStatus('Please select a file and enter your password.');
+  const onEncryptUpload = async () => {
+    if (!file || !passphrase) {
+      setStatus('Please select a file and enter a passphrase.');
       return;
     }
+    setStatus('Uploading...');
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('keyB', passphrase);
 
     try {
-      setStatus('Encrypting file…');
-      // Derive key using only keyB and a fixed salt
-      const encoder = new TextEncoder();
-      const salt = encoder.encode('SecDropSalt');
-      const passphrase = encoder.encode(keyB);
-      const baseKey = await window.crypto.subtle.importKey(
-        'raw', passphrase, { name: 'PBKDF2' }, false, ['deriveKey']
-      );
-      const cryptoKey = await window.crypto.subtle.deriveKey(
-        {
-          name: 'PBKDF2',
-          salt,
-          iterations: 100000,
-          hash: 'SHA-256'
-        },
-        baseKey,
-        { name: 'AES-GCM', length: 256 },
-        false,
-        ['encrypt', 'decrypt']
-      );
-
-      const iv = window.crypto.getRandomValues(new Uint8Array(12));
-      const data = new Uint8Array(await file.arrayBuffer());
-      const ciphertext = await window.crypto.subtle.encrypt(
-        { name: 'AES-GCM', iv },
-        cryptoKey,
-        data
-      );
-
-      setStatus('Uploading…');
-      const form = new FormData();
-      form.append('file', new Blob([ciphertext], { type: file.type }));
-      form.append('iv', JSON.stringify(Array.from(iv)));
-
       const res = await fetch('/api/crypto/upload', {
         method: 'POST',
-        body: form,
+        body: formData
       });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || res.statusText);
 
-      if (!res.ok) throw new Error(await res.text());
-      const { downloadUrl } = await res.json();
-
-      setStatus('Success! Save the download link below: ');
-      setDownloadUrl(downloadUrl || '');
+      setStatus('Upload successful.');
+      setDownloadUrl(`${window.location.origin}/download/${json.id}`);
     } catch (err) {
-      console.error(err);
-      setStatus('Error: ' + err.message);
-      setDownloadUrl('');
+      console.error('Upload error:', err);
+      setStatus(`Error: ${err.message}`);
     }
-  }
+  };
 
   return (
-    <div className="file-upload-container">
-      <h2>SecDrop: Drag & Drop or Choose File</h2>
-
-      <div
-        className="dropzone"
-        onDrop={handleDrop}
-        onDragOver={handleDragOver}
-      >
-        {file ? (
-          <p>{file.name}</p>
-        ) : (
-          <p>Drag & drop a file here</p>
-        )}
-        {/* Hidden file input for both drag-and-drop and choose button */}
-        <input
-          type="file"
-          ref={fileInputRef}
-          className="file-input"
-          onChange={e => e.target.files[0] && handleFileSelect(e.target.files[0])}
-        />
-      </div>
-      <button type="button" onClick={handleChooseClick} className="choose-button">
-        Choose File
-      </button>
+    <div style={{ maxWidth: 500, margin: '2rem auto', textAlign: 'center' }}>
+      <h2>Encrypt & Upload File</h2>
+      <input type="file" onChange={onFileChange} />
+      <br />
       <input
         type="password"
-        placeholder="Enter your password to encrypt"
-        value={keyB}
-        onChange={e => setKeyB(e.target.value)}
+        placeholder="Passphrase"
+        value={passphrase}
+        onChange={(e) => setPassphrase(e.target.value)}
+        style={{ width: '100%', margin: '0.5rem 0', padding: '0.5rem' }}
       />
-      <button onClick={handleUpload}>Encrypt & Upload</button>
-      <p className="status-message">{status}</p>
+      <br />
+      <button onClick={onEncryptUpload} style={{ padding: '0.5rem 1rem' }}>
+        Upload
+      </button>
+
+      {status && <p style={{ marginTop: '1rem' }}>{status}</p>}
       {downloadUrl && (
-        <div className="download-link">
-          <strong>Download Link:</strong>
-          <a href={downloadUrl} target="_blank" rel="noopener noreferrer">{downloadUrl}</a>
-          <button onClick={() => navigator.clipboard.writeText(downloadUrl)}>Copy Link</button>
-        </div>
+        <p style={{ marginTop: '1rem' }}>
+          Download link: <a href={downloadUrl}>{downloadUrl}</a>
+        </p>
       )}
     </div>
   );
