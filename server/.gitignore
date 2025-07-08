@@ -1,3 +1,2 @@
-# Do not commit environment files
-server/.env
 
+.env
