@@ -1,5 +1,8 @@
 // client/src/components/FileEncryptUpload.js
+import { QRCodeSVG } from 'qrcode.react';
 import React, { useState } from 'react';
+
+
 
 /**
  * FileEncryptUpload component
@@ -64,11 +67,26 @@ export default function FileEncryptUpload() {
       </button>
 
       {status && <p style={{ marginTop: '1rem' }}>{status}</p>}
-      {downloadUrl && (
-        <p style={{ marginTop: '1rem' }}>
-          Download link: <a href={downloadUrl}>{downloadUrl}</a>
-        </p>
-      )}
+
+
+ {downloadUrl && (
+  <div style={{ marginTop: '1rem' }}>
+    <button
+      onClick={() => {
+        navigator.clipboard.writeText(downloadUrl);
+        alert('Download link copied to clipboard!');
+      }}
+      style={{ padding: '0.5rem 1rem' }}
+    >
+      📋 Copy Download Link
+    </button>
+    <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1rem' }}>
+      <QRCodeSVG value={downloadUrl} size={180} />
     </div>
-  );
-}
+  </div>
+ 
+)}
+
+
+    </div>
+  );}
