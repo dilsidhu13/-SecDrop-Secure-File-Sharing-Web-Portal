@@ -1,3 +1,24 @@
+const fs = require('fs');
+const path = require('path');
+
+// Persistent metadata path
+const metadataPath = path.join(__dirname, 'uploads.json');
+
+// Load or initialize metadata
+let uploads = {};
+if (fs.existsSync(metadataPath)) {
+  try {
+    uploads = JSON.parse(fs.readFileSync(metadataPath));
+  } catch (err) {
+    console.error('[⚠️ uploads.json] Failed to parse:', err);
+  }
+}
+
+// Save metadata helper
+function saveMetadata() {
+  fs.writeFileSync(metadataPath, JSON.stringify(uploads, null, 2));
+}
+
 const { S3Client, PutObjectCommand, GetObjectCommand } = require('@aws-sdk/client-s3');
 const fs = require('fs');
 const path = require('path');
