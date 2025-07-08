@@ -1,8 +1,11 @@
+// server/filesencryptdecrypt.js
+
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const { pipeline } = require('stream');
 const { promisify } = require('util');
+const { uploadToS3, downloadFromS3 } = require('./ec2');
 
 const pipelineAsync = promisify(pipeline);
 const FIXED_SALT = 'SecDropSalt';
@@ -25,86 +28,102 @@ async function deriveKey(keyB) {
 }
 
 /**
- * Handle file upload: encrypt with AES-GCM, save file + metadata (including authTag).
- * Expects `req.file` (e.g. via multer) and `req.body.keyB`.
+ * Handle file upload: encrypt with AES-GCM, upload to S3, save metadata.
+ * Expects `req.file` (via multer) and `req.body.keyB`.
  */
 async function uploadFile(req, res) {
   if (!req.file || !req.body.keyB) {
     return res.status(400).json({ error: 'file and keyB required' });
   }
+
   const { originalname, path: tempPath } = req.file;
   const keyB = req.body.keyB;
 
-  const iv = crypto.randomBytes(12);
-  const key = await deriveKey(keyB);
-  const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
-  const id = crypto.randomUUID();
-
-  // Ensure uploads directory exists
-  const uploadsDir = path.join(__dirname, '../uploads');
-  if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
-  const outPath = path.join(uploadsDir, `${id}.enc`);
-
   try {
-    // Encrypt → file
+    // Generate AES-GCM parameters
+    const iv = crypto.randomBytes(12);
+    const key = await deriveKey(keyB);
+    const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
+    const id = crypto.randomUUID();
+    const s3Key = `${id}.enc`;
+
+    // Encrypt to a temporary local file
+    const localEncPath = path.join(path.dirname(tempPath), `${id}.enc`);
     await pipelineAsync(
       fs.createReadStream(tempPath),
       cipher,
-      fs.createWriteStream(outPath)
+      fs.createWriteStream(localEncPath)
     );
-    // Capture GCM authentication tag
+
+    // Capture authentication tag
     const authTagHex = cipher.getAuthTag().toString('hex');
 
+    // Upload encrypted file to S3
+    await uploadToS3(localEncPath, s3Key);
+
+    // Clean up local encrypted file
+    fs.unlinkSync(localEncPath);
+
+    // Store metadata in memory
     uploads[id] = {
-      path: outPath,
+      s3Key,
       originalName: originalname,
       ivHex: iv.toString('hex'),
       authTagHex
     };
+
+    // Respond with file ID
     res.json({ id });
   } catch (err) {
-    console.error('Encryption error:', err);
-    res.status(500).json({ error: 'Encryption failed' });
+    console.error('Encryption/upload error:', err);
+    res.status(500).json({ error: 'Encryption or upload failed' });
+  } finally {
+    // Always clean up the multer temp file
+    if (fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
   }
 }
 
 /**
- * Handle file download: verify authTag, decrypt, and stream back.
- * Expects `req.body.keyB` with the same passphrase used on upload.
+ * Handle file download: fetch from S3, decrypt with AES-GCM, stream to client.
+ * Expects `req.params.id` and `req.body.keyB`.
  */
 async function downloadFile(req, res) {
   const { id } = req.params;
   const { keyB } = req.body;
   const meta = uploads[id];
+
   if (!meta) {
     return res.status(404).json({ error: 'Invalid file ID' });
   }
+
   try {
     const key = await deriveKey(keyB);
-    const encodedName = encodeURIComponent(meta.originalName);
+    const iv = Buffer.from(meta.ivHex, 'hex');
+    const authTag = Buffer.from(meta.authTagHex, 'hex');
 
+    // Prepare response headers
+    const encodedName = encodeURIComponent(meta.originalName);
     res.setHeader(
       'Content-Disposition',
       `attachment; filename="${encodedName}"; filename*=UTF-8''${encodedName}`
     );
     res.setHeader('Content-Type', 'application/octet-stream');
 
-    // Recreate IV and authTag buffers
-    const iv = Buffer.from(meta.ivHex, 'hex');
-    const authTag = Buffer.from(meta.authTagHex, 'hex');
-
-    // Set up AES-GCM decipher and verify tag
+    // Set up AES-GCM decipher
     const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
     decipher.setAuthTag(authTag);
 
-    // Stream decrypted data to client
+    // Stream from S3 → decrypt → client
+    const encryptedStream = downloadFromS3(meta.s3Key);
     await pipelineAsync(
-      fs.createReadStream(meta.path),
+      encryptedStream,
       decipher,
       res
     );
   } catch (err) {
-    console.error('Decryption error:', err);
+    console.error('Decryption/download error:', err);
     if (!res.headersSent) {
       res.status(500).send('Decryption failed');
     } else {
@@ -119,8 +138,14 @@ async function downloadFile(req, res) {
 function getMetadata(req, res) {
   const { id } = req.params;
   const meta = uploads[id];
-  if (!meta) return res.status(404).json({ error: 'Invalid file ID' });
+  if (!meta) {
+    return res.status(404).json({ error: 'Invalid file ID' });
+  }
   res.json({ originalName: meta.originalName });
 }
 
-module.exports = { uploadFile, downloadFile, getMetadata };
+module.exports = {
+  uploadFile,
+  downloadFile,
+  getMetadata
+};

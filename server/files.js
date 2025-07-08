@@ -1,4 +1,4 @@
-const { listAllUploads } = require('./ec2Storage');
+const { listAllUploads } = require('./ec2');
 
 app.get('/api/uploads', (req, res) => {
   const data = listAllUploads();
