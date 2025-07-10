@@ -1,65 +1,73 @@
-
-
-.file-upload-container {
-  max-width: 800px;
-  max-height: 900px;
+/* Container for the upload UI */
+.upload-container {
+  max-width: 600px;
   margin: 2rem auto;
   padding: 1rem;
+  border: 2px dashed #ccc;
+  border-radius: 8px;
   text-align: center;
 }
 
+/* Dropzone styling */
 .dropzone {
-  position: relative;
   padding: 2rem;
-  border: 2px dashed #888;
-  border-radius: 8px;
-  height: 190px;
-  width : 100%;
-    display: flex;
-  background-color: #f9f9f9;
+  border: 2px dashed #999;
+  border-radius: 4px;
   cursor: pointer;
-  margin-bottom: 1rem;
+  transition: background-color 0.2s;
 }
 
-.dropzone p {
-  margin: 0;
-  color: #555;
+.dropzone.active {
+  background-color: #f0f8ff;
 }
 
-.file-input {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  cursor: pointer;
+/* File list under dropzone */
+.file-list {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0;
+  text-align: left;
 }
 
-input[type="password"] {
-    width: 82%;
-    padding: 0.5rem;
-    margin-left: 17px;
-    margin-top: 14px;
-    margin-bottom: 1rem;
-    border-radius: 9px;
-    border: 1px solid #ccc;
+.file-list li {
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
 }
 
-button {
-  padding: 0.5rem 1rem;
+/* Inputs and button */
+.upload-container input[type="password"],
+.upload-container input[type="text"] {
+  width: calc(100% - 2rem);
+  padding: 0.5rem;
+  margin: 0.5rem 0;
+  box-sizing: border-box;
+}
+
+.upload-container button {
+  padding: 0.6rem 1.2rem;
+  margin-top: 0.5rem;
   border: none;
-  background-color: #007bff;
+  border-radius: 4px;
+  background-color: #4CAF50;
   color: white;
-  border-radius: 6px;
   cursor: pointer;
 }
 
-button:hover {
-  background-color: #0056b3;
+.upload-container button:hover {
+  background-color: #45a049;
 }
 
-.status-message {
+/* Status and results */
+.status {
   margin-top: 1rem;
   color: #333;
+}
+
+.results {
+  margin-top: 1.5rem;
+  text-align: left;
+}
+
+.result-item {
+  margin-bottom: 0.5rem;
 }
