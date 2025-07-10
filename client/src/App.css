@@ -1,32 +1,22 @@
-.App {
-  text-align: center;
+:root {
+  --primary-color: #222;
+  --accent-color: #4CAF50;
+  --bg-light: #fff;
+  --text-light: #666;
+  --transition: 0.3s ease;
 }
-
-.App-header-text {
- 
-  background-color: #282c34;
-  min-height: 100px;
-  display: flow-root;
-  font-size: inherit;
-  color: white;
-  padding: 5px 20px;
+body {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  background: var(--bg-light);
+  color: var(--primary-color);
+  transition: background var(--transition), color var(--transition);
 }
-
-.App-logo {
-  height: 150px;
-  width: 150px;
-  margin-right: 1650px;
-  border-radius: 50%;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-  background-color: #282c34;
-  animation: roll-tire 10s linear infinite;
+a {
+  color: var(--accent-color);
+  text-decoration: none;
+  transition: color var(--transition);
 }
-
-@keyframes roll-tire {
-  0% {
-    transform: translateX(0) rotate(0deg);
-  }
-  100% {
-    transform: translateX(1600px) rotate(360deg);
-  }
-} 
+a:hover {
+  color: #43a047;
+}

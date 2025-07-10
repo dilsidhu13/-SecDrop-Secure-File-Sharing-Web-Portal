@@ -1,73 +1,64 @@
-/* Container for the upload UI */
 .upload-container {
   max-width: 600px;
   margin: 2rem auto;
   padding: 1rem;
-  border: 2px dashed #ccc;
+  border: 1px solid #eee;
   border-radius: 8px;
-  text-align: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  transition: box-shadow 0.3s;
 }
-
-/* Dropzone styling */
+.upload-container:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
 .dropzone {
   padding: 2rem;
-  border: 2px dashed #999;
+  border: 2px dashed #ccc;
   border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.2s;
+  transition: border-color 0.3s;
+  text-align: center;
 }
-
 .dropzone.active {
-  background-color: #f0f8ff;
+  border-color: var(--accent-color);
+  background: #f9fff9;
 }
-
-/* File list under dropzone */
 .file-list {
   list-style: none;
   padding: 0;
   margin: 1rem 0;
-  text-align: left;
 }
-
 .file-list li {
   margin-bottom: 0.5rem;
   font-size: 0.9rem;
 }
-
-/* Inputs and button */
-.upload-container input[type="password"],
-.upload-container input[type="text"] {
-  width: calc(100% - 2rem);
-  padding: 0.5rem;
-  margin: 0.5rem 0;
-  box-sizing: border-box;
-}
-
+.upload-container input,
 .upload-container button {
-  padding: 0.6rem 1.2rem;
-  margin-top: 0.5rem;
-  border: none;
+  width: 100%;
+  padding: 0.6rem;
+  margin: 0.5rem 0;
+}
+.progress-bar {
+  width: 100%;
+  background: #eee;
   border-radius: 4px;
-  background-color: #4CAF50;
-  color: white;
-  cursor: pointer;
+  overflow: hidden;
+  margin-top: 0.5rem;
+  height: 8px;
 }
-
-.upload-container button:hover {
-  background-color: #45a049;
+.progress {
+  height: 100%;
+  background: var(--accent-color);
+  transition: width 0.2s;
 }
-
-/* Status and results */
 .status {
   margin-top: 1rem;
-  color: #333;
+  color: var(--primary-color);
+  font-weight: 500;
 }
-
 .results {
   margin-top: 1.5rem;
   text-align: left;
 }
-
-.result-item {
-  margin-bottom: 0.5rem;
+.result-item a {
+  color: var(--accent-color);
+  word-break: break-all;
 }

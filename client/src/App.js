@@ -1,36 +1,18 @@
-// src/App.js
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import FileEncryptUpload from './FileEncryptUpload.js';
-import DownloadPage from './DownloadPage.js';
-import logo from './logo.webp';   // logo Photo
+import Homepage from './Homepage';
+import FileEncryptUpload from './FileEncryptUpload';
+import DownloadPage from './DownloadPage';
 import './App.css';
 
-function App() {
+export default function App() {
   return (
     <Router>
-    <div className="App">
-      <header className="App-header">
-        {/* Logo on the left */}
-        <img src={logo} className="App-logo" alt="SecDrop logo" />
-
-        {/* Text to the right of logo */}
-        <div className="App-header-text">
-          <h1>SecDrop</h1>
-          <p>Secure, account-free file transfers</p>
-        </div>
-      </header>
-
-      <main>
-          <Routes>
-          <Route path="/" element={<FileEncryptUpload />} />
-          <Route path="/download/:id" element={<DownloadPage />} />
-        </Routes>
-      </main>
-    </div>
+      <Routes>
+        <Route path="/" element={<Homepage />} />
+        <Route path="/upload" element={<FileEncryptUpload />} />
+        <Route path="/download/:id" element={<DownloadPage />} />
+      </Routes>
     </Router>
-
   );
 }
-
-export default App;

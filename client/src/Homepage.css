@@ -1,0 +1,116 @@
+.homepage {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+  
+  .nav {
+    width: 100%;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .logo-text {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--primary-color);
+    transition: transform var(--transition);
+  }
+  .logo-text:hover {
+    transform: rotate(-5deg) scale(1.05);
+  }
+  
+  .nav-list {
+    display: flex;
+    gap: 1.5rem;
+    list-style: none;
+  }
+  .nav-list a {
+    font-weight: 600;
+    color: var(--primary-color);
+    transition: color var(--transition), transform var(--transition);
+  }
+  .nav-list a:hover {
+    color: var(--accent-color);
+    transform: translateY(-2px);
+  }
+  
+  .hero {
+    background: var(--bg-light);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 2rem 1rem;
+  }
+  .hero-title {
+    font-size: 3rem;
+    margin-bottom: 0.5rem;
+    transition: color var(--transition), transform var(--transition);
+  }
+  .hero-title:hover {
+    color: var(--accent-color);
+    transform: scale(1.05);
+  }
+  .hero-subtitle {
+    font-size: 1.25rem;
+    margin-bottom: 2rem;
+    color: var(--text-light);
+  }
+  .button {
+    background: var(--accent-color);
+    color: var(--bg-light);
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 4px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background var(--transition), transform var(--transition);
+  }
+  .button:hover {
+    background: #43a047;
+    transform: translateY(-3px) scale(1.02);
+  }
+  
+  .features {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 2rem;
+    max-width: 960px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+  }
+  .feature {
+    background: var(--bg-light);
+    border-radius: 6px;
+    padding: 1.5rem;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    transition: transform var(--transition), box-shadow var(--transition);
+  }
+  .feature:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  }
+  .feature h2 {
+    margin-bottom: 0.5rem;
+    font-size: 1.25rem;
+  }
+  .feature p {
+    color: var(--text-light);
+    font-size: 0.95rem;
+  }
+  
+  .footer {
+    text-align: center;
+    padding: 1rem;
+    background: var(--bg-light);
+    font-size: 0.85rem;
+    color: var(--text-light);
+  }
+  
