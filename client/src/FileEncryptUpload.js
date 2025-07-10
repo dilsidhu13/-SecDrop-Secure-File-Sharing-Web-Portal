@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useRef } from 'react';
 import { useDropzone } from 'react-dropzone';
 import './FileEncryptUpload.css';
+import { QRCodeSVG } from 'qrcode.react';
 
 export default function FileEncryptUpload() {
   const [files, setFiles] = useState([]);
@@ -88,6 +89,9 @@ export default function FileEncryptUpload() {
           {results.map(r => (
             <div key={r.id} className="result-item">
               <strong>{r.originalName}:</strong> <a href={r.url}>{r.url}</a>
+              <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1rem' }}>
+                <QRCodeSVG value={r.url} size={180} />
+              </div>
             </div>
           ))}
         </div>
