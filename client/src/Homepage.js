@@ -6,13 +6,6 @@ export default function Homepage() {
   return (
     <div className="homepage">
       <header className="hero">
-        <nav className="nav">
-          <div className="logo-text">SecDrop</div>
-          <ul className="nav-list">
-            <li><Link to="/upload">Upload</Link></li>
-            <li><Link to="/">Home</Link></li>
-          </ul>
-        </nav>
         <div className="hero-content">
           <h1 className="hero-title">SecDrop</h1>
           <p className="hero-subtitle">Minimal. Secure. Effortless file sharing.</p>
