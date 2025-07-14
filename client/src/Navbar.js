@@ -15,6 +15,12 @@ export default function Navbar() {
       </Link>
         <li><Link to="/about">About</Link></li>
       </ul>
+      <Link to="/donate"
+    style={{
+    padding: '0.5rem 1rem', backgroundColor: '#14cce0',color: 'white',borderRadius: '5px',
+    textDecoration: 'none',
+    fontWeight: 'bold'}}>Donate</Link>
+
     </nav>
   );
 }
