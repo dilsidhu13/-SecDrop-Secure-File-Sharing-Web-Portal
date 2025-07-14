@@ -20,9 +20,22 @@ export default function FileEncryptUpload() {
   }, []);
   const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop, multiple: true });
 
+  const validateEmail = (email) => {
+    // Simple email regex
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
+
   const onEncryptUpload = () => {
     if (!files.length || !passphrase || !recipient) {
       setStatus('Please select files, enter passphrase & recipient.');
+      return;
+    }
+    if (!/^[0-9]{7}$/.test(passphrase)) {
+      setStatus('Passphrase must be exactly 7 digits.');
+      return;
+    }
+    if (!validateEmail(recipient)) {
+      setStatus('Please enter a valid email address for the recipient.');
       return;
     }
     setStatus('Uploading...');
@@ -53,6 +66,18 @@ export default function FileEncryptUpload() {
     xhr.send(formData);
   };
 
+  // Always use the current hostname and port for links/QR
+  function getCurrentHostUrl(url) {
+    try {
+      const u = new URL(url, window.location.origin);
+      u.hostname = window.location.hostname;
+      u.port = window.location.port;
+      return u.toString();
+    } catch {
+      return url;
+    }
+  }
+
   return (
     <div className="upload-container">
       <h2>Secure Multi-File Upload</h2>
@@ -70,9 +95,13 @@ export default function FileEncryptUpload() {
           )}
           <input
             type="password"
-            placeholder="Passphrase"
+            placeholder="Passphrase (7 digits)"
             value={passphrase}
-            onChange={e => setPassphrase(e.target.value)}
+            onChange={e => {
+              // Only allow numeric input, max 7 digits
+              const val = e.target.value.replace(/[^0-9]/g, '').slice(0, 7);
+              setPassphrase(val);
+            }}
           />
           <input
             type="text"
@@ -94,12 +123,12 @@ export default function FileEncryptUpload() {
           <h3>Download Links</h3>
           {results.map(r => (
             <div key={r.id} className="result-item">
-              <strong>{r.originalName}:</strong> <a href={r.url}>{r.url}</a>
+              <strong>{r.originalName}:</strong> <a href={getCurrentHostUrl(r.url)}>{getCurrentHostUrl(r.url)}</a>
               <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1rem' }}>
-                <QRCodeSVG value={r.url} size={180} />
+                <QRCodeSVG value={getCurrentHostUrl(r.url)} size={180} />
               </div>
               <div style={{ marginTop: '0.5rem' }}>
-                <a href={r.url} target="_blank" rel="noopener noreferrer">Go to Download Page</a>
+                <a href={getCurrentHostUrl(r.url)} target="_blank" rel="noopener noreferrer">Go to Download Page</a>
               </div>
             </div>
           ))}

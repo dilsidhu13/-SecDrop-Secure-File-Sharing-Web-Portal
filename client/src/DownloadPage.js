@@ -47,8 +47,30 @@ export default function DownloadPage() {
         body: JSON.stringify({ keyB: passphrase, otp })
       });
       if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || res.statusText);
+        let errMsg = 'Wrong passphrase & verification code, please try again.';
+        try {
+          const err = await res.json();
+          if (
+            err.error && (
+              err.error.toLowerCase().includes('passphrase') ||
+              err.error.toLowerCase().includes('otp') ||
+              err.error.toLowerCase().includes('invalid') ||
+              err.error.toLowerCase().includes('wrong') ||
+              err.error.toLowerCase().includes('key') ||
+              err.error.toLowerCase().includes('decrypt') ||
+              err.error.toLowerCase().includes('decryption')
+            )
+          ) {
+            errMsg = 'Wrong passphrase & verification code, please try again.';
+            setPassphrase('');
+            setOtp('');
+          } else if (err.error) {
+            errMsg = err.error;
+          }
+        } catch {}
+        setStatus(errMsg);
+        setLoading(false);
+        return;
       }
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
