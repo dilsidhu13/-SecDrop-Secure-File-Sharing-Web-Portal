@@ -55,32 +55,37 @@ export default function FileEncryptUpload() {
   return (
     <div className="upload-container">
       <h2>Secure Multi-File Upload</h2>
-      <div {...getRootProps()} className={`dropzone ${isDragActive ? 'active' : ''}`}>      
-        <input {...getInputProps()} />
-        {isDragActive ? <p>Drop files here…</p> : <p>Drag & drop files, or click to select</p>}
-      </div>
-      {files.length > 0 && (
-        <ul className="file-list">
-          {files.map(f => <li key={f.path}>{f.path} ({Math.round(f.size/1024)} KB)</li>)}
-        </ul>
-      )}
-      <input
-        type="password"
-        placeholder="Passphrase"
-        value={passphrase}
-        onChange={e => setPassphrase(e.target.value)}
-      />
-      <input
-        type="text"
-        placeholder="Recipient email or phone"
-        value={recipient}
-        onChange={e => setRecipient(e.target.value)}
-      />
-      <button onClick={onEncryptUpload}>Encrypt & Send</button>
-      {progress > 0 && (
-        <div className="progress-bar">
-          <div className="progress" style={{ width: `${progress}%` }} />
-        </div>
+      {/* Hide upload UI after upload is complete */}
+      {results.length === 0 && (
+        <>
+          <div {...getRootProps()} className={`dropzone ${isDragActive ? 'active' : ''}`}>      
+            <input {...getInputProps()} />
+            {isDragActive ? <p>Drop files here…</p> : <p>Drag & drop files, or click to select</p>}
+          </div>
+          {files.length > 0 && (
+            <ul className="file-list">
+              {files.map(f => <li key={f.path}>{f.path} ({Math.round(f.size/1024)} KB)</li>)}
+            </ul>
+          )}
+          <input
+            type="password"
+            placeholder="Passphrase"
+            value={passphrase}
+            onChange={e => setPassphrase(e.target.value)}
+          />
+          <input
+            type="text"
+            placeholder="Recipient email or phone"
+            value={recipient}
+            onChange={e => setRecipient(e.target.value)}
+          />
+          <button onClick={onEncryptUpload}>Encrypt & Send</button>
+          {progress > 0 && (
+            <div className="progress-bar">
+              <div className="progress" style={{ width: `${progress}%` }} />
+            </div>
+          )}
+        </>
       )}
       {status && <p className="status">{status}</p>}
       {results.length > 0 && (

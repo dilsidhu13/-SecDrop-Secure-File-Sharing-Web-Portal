@@ -20,3 +20,52 @@ a {
 a:hover {
   color: #43a047;
 }
+
+/* 1. Make padding count inside width */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+/* 2. Center & size the upload card */
+.upload-container {
+  max-width: 600px;        /* cap the width */
+  margin: 40px auto;       /* center on page */
+  padding: 2rem;           /* inner whitespace */
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;    /* children fill the container’s width */
+}
+
+/* 3. Style the dropzone */
+.upload-container .dropzone {
+  width: 100%;
+  height: 150px;
+  border: 2px dashed #ccc;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+/* 4. Make inputs & button full-width inside the card */
+.upload-container input,
+.upload-container button {
+  width: 100%;
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+/* 5. Give the button a more “clickable” style */
+.upload-container button {
+  background-color: var(--accent-color);
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+}
