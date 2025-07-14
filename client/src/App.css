@@ -69,3 +69,53 @@ a:hover {
   cursor: pointer;
   font-weight: bold;
 }
+
+@keyframes blink {
+  50% { opacity: 0; }
+}
+
+.badge--blink {
+  display: inline-block;
+  margin-left: 0.25rem;
+  padding: 0.1em 0.4em;
+  font-size: 0.75em;
+  font-weight: bold;
+  color: #fff;
+  background-color: #e74c3c;
+  border-radius: 4px;
+  animation: blink 1s step-start infinite;
+}
+/* blinking keyframes */
+@keyframes blink {
+  50% { opacity: 0; }
+}
+
+/* Anchor the badge to the link itself */
+.p2p-link {
+  position: relative;
+  display: inline-block;
+  /* ↓ cut this down */
+  padding-top: 0;  
+}
+
+/* Style & position the badge */
+.badge--blink {
+  position: absolute;
+  /* Pin the bottom right at the top of the link text */
+  bottom: 100%;
+  /* ↓ small gap */
+  margin-bottom: 2px;  
+  left: 50%;
+  transform: translateX(-50%);
+
+  padding: 0.2em 0.4em;
+  font-size: 0.7rem;
+  font-weight: bold;
+  color: white;
+  background: #e74c3c;
+  border-radius: 2px;
+  white-space: nowrap;
+  pointer-events: none;
+  animation: blink 1s step-start infinite;
+}
+

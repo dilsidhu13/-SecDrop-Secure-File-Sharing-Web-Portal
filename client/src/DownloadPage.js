@@ -11,6 +11,7 @@ export default function DownloadPage() {
   const [status, setStatus] = useState('');
   const [loading, setLoading] = useState(false);
   const [codeSent, setCodeSent] = useState(false);
+  const [downloadStarted, setDownloadStarted] = useState(false);
 
   useEffect(() => {
     fetch(`/api/crypto/metadata/${id}`)
@@ -59,6 +60,7 @@ export default function DownloadPage() {
       a.remove();
       window.URL.revokeObjectURL(url);
       setStatus('Download started');
+      setDownloadStarted(true);
     } catch (err) {
       setStatus(`Error: ${err.message}`);
     } finally {
@@ -70,22 +72,22 @@ export default function DownloadPage() {
     <div className="download-container">
       <h2>Download Secure File</h2>
       {originalName && <p className="filename">{originalName}</p>}
-      <button onClick={requestOtp} disabled={codeSent}>Send Verification Code</button>
+      <button onClick={requestOtp} disabled={codeSent || downloadStarted}>Send Verification Code</button>
       <input
         type="password"
         placeholder="Passphrase"
         value={passphrase}
         onChange={e => setPassphrase(e.target.value)}
-        disabled={!codeSent}
+        disabled={!codeSent || downloadStarted}
       />
       <input
         type="text"
         placeholder="Verification Code"
         value={otp}
         onChange={e => setOtp(e.target.value)}
-        disabled={!codeSent}
+        disabled={!codeSent || downloadStarted}
       />
-      <button onClick={handleDownload} disabled={!codeSent || loading}>Download</button>
+      <button onClick={handleDownload} disabled={!codeSent || loading || downloadStarted}>Download</button>
       {loading && <div className="spinner" />}
       {status && <p className="status">{status}</p>}
     </div>

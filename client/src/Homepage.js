@@ -26,6 +26,10 @@ export default function Homepage() {
           <h2>One-Time Codes</h2>
           <p>Recipients verify downloads with OTP.</p>
         </div>
+        <div className="feature-card">
+    <h3>Unlimited File Sizes</h3>
+    <p>Upload and download any file type or size without limits.</p>
+  </div>
       </section>
 
       <footer className="footer">
