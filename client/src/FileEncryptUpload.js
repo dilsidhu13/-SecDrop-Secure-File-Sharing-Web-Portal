@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useRef } from 'react';
 import { useDropzone } from 'react-dropzone';
+import { Link } from 'react-router-dom';
 import './FileEncryptUpload.css';
 import { QRCodeSVG } from 'qrcode.react';
 
@@ -97,15 +98,13 @@ export default function FileEncryptUpload() {
               <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1rem' }}>
                 <QRCodeSVG value={r.url} size={180} />
               </div>
-              {/* Add a link to the download page for this file */}
               <div style={{ marginTop: '0.5rem' }}>
                 <a href={r.url} target="_blank" rel="noopener noreferrer">Go to Download Page</a>
               </div>
             </div>
           ))}
-          {/* Add a button to upload another file */}
           <div style={{ marginTop: '2rem', textAlign: 'center' }}>
-            <button onClick={() => { setFiles([]); setPassphrase(''); setRecipient(''); setStatus(''); setResults([]); setProgress(0); }}>Click here to upload another file</button>
+            <Link to="/upload" className="button">Click here to upload another file</Link>
           </div>
         </div>
       )}

@@ -90,6 +90,10 @@ export default function DownloadPage() {
       <button onClick={handleDownload} disabled={!codeSent || loading || downloadStarted}>Download</button>
       {loading && <div className="spinner" />}
       {status && <p className="status">{status}</p>}
+      {/* Add a link to upload another file at the bottom */}
+      <div style={{ marginTop: '2rem', textAlign: 'center' }}>
+        <a href="/" className="button">Click here to go Home Page. </a>
+      </div>
     </div>
   );
 }
